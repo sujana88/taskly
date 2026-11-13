@@ -12,7 +12,10 @@ interface PomodoroStore {
   setState: (state: PomodoroState) => void
   setTask: (taskId: string | null) => void
   updateSettings: (changes: Partial<PomodoroSettings>) => void
-  recordSession: (day: string) => void
+  /** The last finished focus session, so cloud sync can save it (once, even from two devices). */
+  lastSession: { endsAt: number; minutes: number; taskId: string | null } | null
+  recordSession: (day: string, session?: { endsAt: number; minutes: number; taskId: string | null }) => void
+  setSessionsByDay: (sessionsByDay: Record<string, number>) => void
 }
 
 export function localDay(ms: number): string {
@@ -35,13 +38,15 @@ export const usePomodoro = create<PomodoroStore>()(
           const settings = { ...s.settings, ...changes }
           return { settings, state: applySettings(s.state, settings) }
         }),
-      recordSession: (day) =>
+      lastSession: null,
+      recordSession: (day, session) =>
         set((s) => {
           const days = Object.entries({ ...s.sessionsByDay, [day]: (s.sessionsByDay[day] ?? 0) + 1 })
             .sort(([a], [b]) => b.localeCompare(a))
             .slice(0, 30)
-          return { sessionsByDay: Object.fromEntries(days) }
+          return { sessionsByDay: Object.fromEntries(days), lastSession: session ?? s.lastSession }
         }),
+      setSessionsByDay: (sessionsByDay) => set({ sessionsByDay }),
     }),
     {
       name: 'overlap.pomodoro',

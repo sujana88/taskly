@@ -84,13 +84,13 @@ let completing = false
  * Returns the phase that just finished, or undefined.
  */
 export async function completeIfDue(now = Date.now()): Promise<Phase | undefined> {
-  const { state, settings, setState, recordSession } = pomo()
+  const { state, settings, setState, recordSession, taskId } = pomo()
   if (completing || !isDue(state, now) || state.endsAt === null) return undefined
   completing = true
   try {
     if (state.phase === 'focus') {
       await stopEntry(state.endsAt)
-      recordSession(localDay(state.endsAt))
+      recordSession(localDay(state.endsAt), { endsAt: state.endsAt, minutes: settings.focus, taskId })
     }
     setState(advance(state, settings, true))
     return state.phase

@@ -6,6 +6,7 @@ import { ClientsPage } from './features/clients/ClientsPage'
 import { DashboardPage } from './features/dashboard/DashboardPage'
 import { FocusPage } from './features/focus/FocusPage'
 import { HelpCenter } from './features/help/HelpCenter'
+import { ProfilePage } from './features/profile/ProfilePage'
 import { ReportsPage } from './features/reports/ReportsPage'
 import { TasksPage } from './features/tasks/TasksPage'
 import { TimerEngine } from './features/timer/TimerEngine'
@@ -37,6 +38,7 @@ export default function App() {
           <Route path="/focus" element={<FocusPage />} />
           <Route path="/clients" element={<ClientsPage />} />
           <Route path="/reports" element={<ReportsPage />} />
+          <Route path="/profile" element={<ProfilePage />} />
           <Route path="*" element={<DashboardPage />} />
         </Route>
       </Routes>

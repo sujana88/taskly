@@ -68,3 +68,25 @@ describe('password strength', () => {
     expect(['', 'abc', 'abcdefgh', 'abcdefg1', 'abcdefg1!', 'abcdefgh1234'].map(passwordScore)).toEqual([0, 1, 1, 2, 3, 3])
   })
 })
+
+describe('password change and login links', () => {
+  it('sets a new password without the old one, for the signed-in user only', async () => {
+    const { changePassword } = await import('./auth')
+    await signUp(valid)
+    await expect(changePassword('short', 'short')).rejects.toMatchObject({ code: 'passwordShort' })
+    await expect(changePassword('newsecret456', 'different1')).rejects.toMatchObject({ code: 'passwordMismatch' })
+    await changePassword('newsecret456', 'newsecret456')
+    logOut()
+    expect(await codeOf(logIn('ayu@example.com', 'secret123'))).toBe('badCredentials')
+    expect((await logIn('ayu@example.com', 'newsecret456')).email).toBe('ayu@example.com')
+    logOut()
+    await expect(changePassword('another123', 'another123')).rejects.toMatchObject({ code: 'unknown' })
+  })
+
+  it('login links need the server; local mode says so', async () => {
+    const { sendLoginLink, supportsEmailLink } = await import('./auth')
+    expect(supportsEmailLink).toBe(false)
+    await expect(sendLoginLink('not-an-email')).rejects.toMatchObject({ code: 'emailInvalid' })
+    await expect(sendLoginLink('ayu@example.com')).rejects.toMatchObject({ code: 'unavailable' })
+  })
+})

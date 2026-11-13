@@ -20,7 +20,7 @@ describe('help content', () => {
     expect(searchHelp(en, '   ')).toEqual([])
     expect(searchHelp(en, 'OVERLAP').map((h) => h.kind)).toContain('term')
     expect(searchHelp(en, 'pdf pop-ups').map((h) => h.title)).toEqual(['How do I save a timesheet as PDF?'])
-    expect(searchHelp(id, 'kata sandi').some((h) => h.kind === 'faq')).toBe(true)
+    expect(searchHelp(id, 'email spam').some((h) => h.kind === 'faq')).toBe(true)
     expect(searchHelp(en, 'zzzz')).toEqual([])
   })
 })

@@ -8,6 +8,7 @@ import { TimerBar } from '../features/timer/TimerBar'
 import { logOut } from '../features/auth/auth'
 import { initials, useCurrentUser } from '../features/auth/useCurrentUser'
 import { db } from '../db/db'
+import { SyncBadge } from '../sync/SyncUi'
 import { cityOf, formatInZone, isWithinWorkHours, myTimezone } from '../lib/time'
 
 const NAV_ITEMS: { to: string; key: string; icon: AppIconName; end?: boolean }[] = [
@@ -61,7 +62,7 @@ export function Sidebar() {
         </Link>
         {user && (
           <div className="flex items-center gap-2 md:hidden">
-            <span className="text-[13px] text-slate-600">{t('nav.hi', { name: firstName })}</span>
+            <Link to="/profile" className="text-[13px] text-slate-600 no-underline hover:text-accent">{t('nav.hi', { name: firstName })}</Link>
             <LanguageToggle compact />
             <button type="button" onClick={logOut} aria-label={t('auth.logout')} title={t('auth.logout')} className="flex size-9 items-center justify-center rounded-xl text-slate-500 hover:bg-slate-100 hover:text-ink">
               <Icon name="logout" size={17} />
@@ -72,18 +73,24 @@ export function Sidebar() {
 
       {user && (
         <div className="hidden items-center gap-3 rounded-2xl bg-slate-50 p-2.5 md:flex" data-testid="user-menu">
-          <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-blue-700 text-[13px] font-bold text-white" aria-hidden="true">
-            {initials(user.name)}
-          </span>
-          <div className="flex min-w-0 flex-1 flex-col">
-            <span className="truncate text-sm font-bold">{user.name}</span>
-            <span className="truncate text-xs text-muted">{user.email}</span>
-          </div>
+          <Link to="/profile" title={t('nav.profile')} className="group flex min-w-0 flex-1 items-center gap-3 rounded-xl text-ink no-underline" data-testid="profile-link">
+            <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-blue-700 text-[13px] font-bold text-white" aria-hidden="true">
+              {initials(user.name)}
+            </span>
+            <span className="flex min-w-0 flex-1 flex-col">
+              <span className="truncate text-sm font-bold group-hover:text-accent">{user.name}</span>
+              <span className="truncate text-xs text-muted">{user.email}</span>
+            </span>
+          </Link>
           <button type="button" onClick={logOut} aria-label={t('auth.logout')} title={t('auth.logout')} className="flex size-9 shrink-0 items-center justify-center rounded-lg text-slate-500 hover:bg-white hover:text-ink">
             <Icon name="logout" size={16} />
           </button>
         </div>
       )}
+
+      <div className="hidden md:block">
+        <SyncBadge />
+      </div>
 
       <div className="hidden flex-col gap-2 md:flex">
         <span className={sectionLabel}>{t('nav.menu')}</span>

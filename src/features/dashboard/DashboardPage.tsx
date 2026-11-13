@@ -15,6 +15,7 @@ import { ClientChip } from '../tasks/TaskCard'
 import { useTaskData } from '../tasks/useTaskData'
 import { pausePomodoro, startPomodoro } from '../timer/controller'
 import { usePomodoro } from '../timer/store'
+import { EmptyAccountBanner } from '../../sync/SyncUi'
 
 const STATUS_TILE: Record<string, string> = {
   todo: 'bg-slate-100 text-slate-700',
@@ -53,6 +54,7 @@ export function DashboardPage() {
 
   return (
     <main className="flex min-w-0 flex-1 flex-col gap-5 px-5 pt-7 pb-12 md:px-9">
+      <EmptyAccountBanner empty={data.loaded && data.clients.length === 0} />
       <div className="grid gap-5 xl:grid-cols-12">
         {/* Hero */}
         <section className="brand-surface relative overflow-hidden rounded-[28px] p-7 shadow-float xl:col-span-8" aria-labelledby="hello-h">

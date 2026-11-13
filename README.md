@@ -45,6 +45,33 @@ before the rename is kept.
 The `npm` scripts call `node node_modules/...` directly, because the Windows `.cmd` shims break on
 folder paths containing `&`.
 
+## Supabase (accounts and sync)
+
+The Supabase project `Taskly` has the schema from `supabase/migrations/20261113161314_taskly_schema.sql`:
+`profiles`, `clients`, `projects`, `tasks`, `subtasks`, `time_entries`, plus `pomodoro_state` (settings and
+live timer, one row per user) and `focus_sessions` (finished sessions), so the Pomodoro is the same on every
+device. Every table has `user_id` with Row Level Security: a signed-in user only sees and changes their own
+rows; `anon` has no access. A new account gets its profile and Pomodoro row automatically. Only one timer can
+run per user, and a task's `completed_at` follows its status.
+
+Sample data: a signed-in user calls `select public.import_sample_data()` (from the app:
+`supabase.rpc('import_sample_data')`) to fill their own account with the demo clients, projects, tasks,
+subtasks and time entries. It does nothing if the account already has clients.
+
+How the app uses it (`src/sync/`, `src/lib/supabase.ts`):
+
+- `.env` holds the project URL and publishable key (public values). With them, the app runs in
+  **Supabase mode**: sign up / log in use Supabase Auth, and data syncs offline-first. IndexedDB stays
+  the cache the UI reads; local changes go into an outbox (kept across reloads) and are pushed to
+  Supabase; on sign-in the account is pulled; Realtime applies changes from other devices. Logging out
+  wipes this device's copy. The Pomodoro settings, live timer and finished sessions sync too.
+- A new, empty account sees an "Import sample data" card on the dashboard (calls `import_sample_data`).
+- **Local mode** (`VITE_BACKEND=local`, used by `.env.test` and `.env.e2e`): no server, the demo
+  account and seeded data, exactly as before. `npm test` and `npm run e2e` always run in local mode.
+- Supabase dashboard → Authentication → URL Configuration: set the Site URL to where the app is hosted
+  and add it (plus `http://localhost:5173` for development) to the redirect URLs, so the confirmation
+  email links back to the app.
+
 ## Run
 
     npm install

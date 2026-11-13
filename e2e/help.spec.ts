@@ -33,7 +33,7 @@ test('terms, FAQ and shortcuts tabs, and search', async ({ page }) => {
   await panel.getByRole('tab', { name: 'Terms' }).press('ArrowRight')
   await expect(panel.getByRole('tab', { name: 'FAQ' })).toHaveAttribute('aria-selected', 'true')
   await panel.getByText('Where is my data stored?').click()
-  await expect(panel.getByText(/In this browser only/)).toBeVisible()
+  await expect(panel.getByText(/In your Taskly account/)).toBeVisible()
   await panel.getByRole('tab', { name: 'Shortcuts' }).click()
   await expect(panel.getByTestId('shortcuts')).toContainText('Open this help centre')
 
