@@ -1,5 +1,5 @@
 import { HashRouter, Outlet, Route, Routes } from 'react-router-dom'
-import { Sidebar } from './components/Sidebar'
+import { BottomNav, Sidebar } from './components/Sidebar'
 import { LoginPage, SignupPage } from './features/auth/AuthPages'
 import { RequireAuth } from './features/auth/session'
 import { ClientsPage } from './features/clients/ClientsPage'
@@ -12,10 +12,11 @@ import { TimerEngine } from './features/timer/TimerEngine'
 function Shell() {
   return (
     <RequireAuth>
-      <div className="flex min-h-screen flex-col md:flex-row">
+      <div className="flex min-h-screen flex-col pb-24 md:flex-row md:pb-0">
         <Sidebar />
         <Outlet />
       </div>
+      <BottomNav />
       <TimerEngine />
     </RequireAuth>
   )

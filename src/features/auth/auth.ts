@@ -115,3 +115,12 @@ export const useSession = create<{ userId: string | null; setUserId: (id: string
     set({ userId })
   },
 }))
+
+/** Password strength for the sign-up meter, 0–3: long enough, then letters + digits, then 12+ chars or a symbol. */
+export function passwordScore(pw: string): number {
+  if (pw.length < MIN_PASSWORD) return pw ? 1 : 0
+  let score = 1
+  if (/[a-zA-Z]/.test(pw) && /\d/.test(pw)) score++
+  if (pw.length >= 12 || /[^a-zA-Z0-9]/.test(pw)) score++
+  return score
+}

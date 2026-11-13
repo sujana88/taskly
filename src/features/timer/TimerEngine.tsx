@@ -57,7 +57,7 @@ export function TimerEngine() {
 
   const next = state.phase
   return (
-    <div role="status" aria-live="polite" className="pointer-events-none fixed right-4 bottom-4 left-4 z-50 flex justify-end sm:left-auto">
+    <div role="status" aria-live="polite" className="pointer-events-none fixed right-4 bottom-24 left-4 z-50 md:bottom-4 flex justify-end sm:left-auto">
       {finished && (
         <div className="pointer-events-auto flex w-full max-w-sm flex-col gap-3 card p-4 shadow-xl" data-testid="phase-toast">
           <div className="flex items-start gap-3">

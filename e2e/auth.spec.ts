@@ -26,7 +26,7 @@ test('signed-out visitors are sent to log in, then back to where they were going
 
 test('signs up a new account with field checks and keeps the session on reload', async ({ page }) => {
   await page.goto('/#/login')
-  await page.getByRole('link', { name: 'Sign up' }).click()
+  await page.getByRole('link', { name: 'Sign up now' }).click()
   await expect(page.getByRole('heading', { name: 'Create your account' })).toBeVisible()
 
   await page.getByRole('button', { name: 'Create account' }).click()
@@ -68,4 +68,37 @@ test('the demo button signs in straight away, in Indonesian too', async ({ page 
   await expect(page.getByRole('heading', { name: 'Selamat datang kembali' })).toBeVisible()
   await page.getByRole('button', { name: 'Coba akun demo' }).click()
   await expect(page.getByRole('heading', { level: 1, name: /Selamat|Lembur/ })).toBeVisible()
+})
+
+test('the Log in / Sign up tabs switch forms and the password meter guides the user', async ({ page }) => {
+  await page.goto('/#/login')
+  await expect(page.getByTestId('tab-login')).toHaveAttribute('aria-current', 'page')
+  await expect(page.getByText('Test mode:')).toBeVisible()
+  await page.getByTestId('tab-signup').click()
+  await expect(page).toHaveURL(/#\/signup$/)
+  await expect(page.getByTestId('tab-signup')).toHaveAttribute('aria-current', 'page')
+
+  const password = page.getByLabel('Password', { exact: true })
+  await password.fill('abc')
+  await expect(page.getByTestId('password-strength')).toContainText('Weak')
+  await password.fill('abcdefg1')
+  await expect(page.getByTestId('password-strength')).toContainText('Okay')
+  await password.fill('abcdefg1!xyz')
+  await expect(page.getByTestId('password-strength')).toContainText('Strong')
+
+  await page.getByRole('link', { name: 'Log in here' }).click()
+  await expect(page.getByRole('heading', { name: 'Welcome back' })).toBeVisible()
+})
+
+test('phones get a bottom tab bar with every section', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 })
+  await page.goto('/#/login')
+  await page.getByRole('button', { name: 'Try the demo account' }).click()
+  const nav = page.getByTestId('bottom-nav')
+  await expect(nav.getByRole('link')).toHaveCount(5)
+  await expect(nav.getByRole('link', { name: 'Dashboard' })).toHaveAttribute('aria-current', 'page')
+  await expect(page.getByText('Hi, Demo')).toBeVisible()
+  await nav.getByRole('link', { name: 'Reports' }).click()
+  await expect(page.getByRole('heading', { name: 'Weekly report' })).toBeVisible()
+  await page.screenshot({ path: 'e2e-screenshots/19-mobile-nav.png' })
 })

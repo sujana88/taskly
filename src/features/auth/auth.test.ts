@@ -61,3 +61,10 @@ describe('dummy auth', () => {
     expect((await logIn(DEMO_USER.email, DEMO_USER.password)).id).toBe(DEMO_USER.id)
   })
 })
+
+describe('password strength', () => {
+  it('scores length, letters with digits, then length 12+ or a symbol', async () => {
+    const { passwordScore } = await import('./auth')
+    expect(['', 'abc', 'abcdefgh', 'abcdefg1', 'abcdefg1!', 'abcdefgh1234'].map(passwordScore)).toEqual([0, 1, 1, 2, 3, 3])
+  })
+})

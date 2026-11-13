@@ -2,7 +2,7 @@ import i18n from 'i18next'
 import { initReactI18next } from 'react-i18next'
 
 const en = {
-  nav: { main: 'Main', menu: 'Menu', dashboard: 'Dashboard', tasks: 'Tasks', focus: 'Focus', clients: 'Clients', reports: 'Reports', settings: 'Settings' },
+  nav: { main: 'Main', hi: 'Hi, {{name}}', menu: 'Menu', dashboard: 'Dashboard', tasks: 'Tasks', focus: 'Focus', clients: 'Clients', reports: 'Reports', settings: 'Settings' },
   dash: {
     greeting: { morning: 'Good morning, {{name}}', afternoon: 'Good afternoon, {{name}}', late: 'Good afternoon, {{name}}', evening: 'Good evening, {{name}}', night: 'Working late, {{name}}?' },
     summary_one: '{{count}} task is due this week and {{progress}} are in progress.',
@@ -152,7 +152,7 @@ const en = {
     f1: 'Kanban and list views for every client',
     f2: 'Pomodoro focus mode that logs your time',
     f3: 'See when your hours overlap with each client',
-    demoNote: 'Demo only: accounts are stored in this browser. Nothing is sent to a server.',
+    demoNote: 'accounts are only stored in this browser and are not connected to a server yet.',
     loginTitle: 'Welcome back',
     loginSubtitle: 'Log in to pick up where you left off.',
     signupTitle: 'Create your account',
@@ -170,6 +170,11 @@ const en = {
     logout: 'Log out',
     or: 'or',
     demo: 'Try the demo account',
+    signupNow: 'Sign up now',
+    loginNow: 'Log in here',
+    choose: 'Log in or sign up',
+    demoTitle: 'Test mode',
+    strength: { weak: 'Weak', fair: 'Okay', strong: 'Strong' },
     noAccount: 'New to Taskly?',
     haveAccount: 'Already have an account?',
     error: {
@@ -313,7 +318,7 @@ const en = {
 type Dict = typeof en
 
 const id: Dict = {
-  nav: { main: 'Utama', menu: 'Menu', dashboard: 'Dasbor', tasks: 'Tugas', focus: 'Fokus', clients: 'Klien', reports: 'Laporan', settings: 'Pengaturan' },
+  nav: { main: 'Utama', hi: 'Hai, {{name}}', menu: 'Menu', dashboard: 'Dasbor', tasks: 'Tugas', focus: 'Fokus', clients: 'Klien', reports: 'Laporan', settings: 'Pengaturan' },
   dash: {
     greeting: { morning: 'Selamat pagi, {{name}}', afternoon: 'Selamat siang, {{name}}', late: 'Selamat sore, {{name}}', evening: 'Selamat malam, {{name}}', night: 'Lembur malam ini, {{name}}?' },
     summary_one: '{{count}} tugas jatuh tempo minggu ini dan {{progress}} sedang dikerjakan.',
@@ -463,7 +468,7 @@ const id: Dict = {
     f1: 'Tampilan Kanban dan daftar untuk setiap klien',
     f2: 'Mode fokus Pomodoro yang mencatat waktu Anda',
     f3: 'Lihat kapan jam kerja Anda overlap dengan tiap klien',
-    demoNote: 'Hanya demo: akun disimpan di browser ini. Tidak ada data yang dikirim ke server.',
+    demoNote: 'akun hanya tersimpan di browser ini dan belum terhubung ke server.',
     loginTitle: 'Selamat datang kembali',
     loginSubtitle: 'Masuk untuk melanjutkan pekerjaan Anda.',
     signupTitle: 'Buat akun Anda',
@@ -481,6 +486,11 @@ const id: Dict = {
     logout: 'Keluar',
     or: 'atau',
     demo: 'Coba akun demo',
+    signupNow: 'Daftar sekarang',
+    loginNow: 'Masuk di sini',
+    choose: 'Masuk atau daftar',
+    demoTitle: 'Mode uji coba',
+    strength: { weak: 'Lemah', fair: 'Cukup', strong: 'Kuat' },
     noAccount: 'Baru di Taskly?',
     haveAccount: 'Sudah punya akun?',
     error: {
