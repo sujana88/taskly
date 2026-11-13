@@ -150,7 +150,9 @@ export function LoginPage() {
       await logIn(e, p)
       done()
     } catch (err) {
-      setError(err instanceof AuthError ? err.code : 'badCredentials')
+      // Only a real credentials error reads as "email or password is incorrect"; anything else is reported as it is.
+      if (!(err instanceof AuthError)) console.error('[taskly] log-in failed', err)
+      setError(err instanceof AuthError ? err.code : 'unknown')
     } finally {
       setBusy(false)
     }

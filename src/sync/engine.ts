@@ -323,9 +323,13 @@ async function onRemote(table: string, p: Change<Record<string, unknown>>) {
   })
 }
 
-function subscribe(uid: string) {
+async function subscribe(uid: string) {
   const sb = supabase!
-  channel = sb.channel(`taskly-${uid}`)
+  const name = `taskly-${uid}`
+  // supabase.channel() hands back an existing channel with the same name, and adding listeners to an
+  // already-subscribed channel throws. Remove any leftover first so each start gets a fresh channel.
+  for (const ch of sb.getChannels()) if (ch.topic === `realtime:${name}`) await sb.removeChannel(ch)
+  channel = sb.channel(name)
   const tables = ['profiles', 'clients', 'projects', 'tasks', 'subtasks', 'time_entries', 'pomodoro_state', 'focus_sessions']
   for (const table of tables) {
     const filter = table === 'profiles' ? `id=eq.${uid}` : `user_id=eq.${uid}`
@@ -349,10 +353,22 @@ function subscribe(uid: string) {
 
 const onOnline = () => void flush()
 
-/** Start syncing for a signed-in user. Clears another account's cached data first. */
-export async function startSync(user: Pick<User, 'id' | 'name' | 'email'>): Promise<void> {
-  if (!supabase) return
-  if (userId === user.id) return
+let starting: { id: string; done: Promise<void> } | null = null
+
+/** Start syncing for a signed-in user (calls for the same user share one start). */
+export function startSync(user: Pick<User, 'id' | 'name' | 'email'>): Promise<void> {
+  if (!supabase || userId === user.id) return Promise.resolve()
+  if (starting?.id === user.id) return starting.done
+  const done = doStartSync(user)
+  starting = { id: user.id, done }
+  void done.catch(() => undefined).finally(() => {
+    if (starting?.done === done) starting = null
+  })
+  return done
+}
+
+/** Clears another account's cached data first, then pulls, pushes and listens. */
+async function doStartSync(user: Pick<User, 'id' | 'name' | 'email'>): Promise<void> {
   await stopSync(false)
   userId = user.id
   loadOutbox(user.id)
@@ -371,7 +387,12 @@ export async function startSync(user: Pick<User, 'id' | 'name' | 'email'>): Prom
   saveOutbox()
   window.addEventListener('online', onOnline)
   startPomodoroSync(user.id)
-  subscribe(user.id)
+  // Live updates are a bonus: if Realtime can't connect, sync still works through pull and push.
+  try {
+    await subscribe(user.id)
+  } catch (e) {
+    console.warn('[taskly sync] realtime unavailable', e)
+  }
   // In the background: the app opens straight away from the cache and fills in as data arrives.
   void flush().then(() => pull())
 }

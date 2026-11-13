@@ -8,9 +8,28 @@ import { startSync, stopSync } from './engine'
 
 const nameOf = (u: SupabaseUser) => String(u.user_metadata?.name ?? '').trim() || (u.email ?? '').split('@')[0]
 
-async function begin(u: SupabaseUser) {
-  await startSync({ id: u.id, name: nameOf(u), email: u.email ?? '' })
-  useSession.getState().setUserId(u.id)
+let starting: { id: string; done: Promise<void> } | null = null
+
+/**
+ * Open the app for a signed-in user. Log-in calls this, and so does the SIGNED_IN auth event that the
+ * same log-in fires; both get the one shared start-up instead of racing each other. Sync problems are
+ * logged but never block the sign-in: the app still opens and sync retries on its own.
+ */
+export function begin(u: SupabaseUser): Promise<void> {
+  if (starting?.id === u.id) return starting.done
+  const done = (async () => {
+    try {
+      await startSync({ id: u.id, name: nameOf(u), email: u.email ?? '' })
+    } catch (e) {
+      console.error('[taskly] sync could not start; continuing signed in', e)
+    }
+    useSession.getState().setUserId(u.id)
+  })()
+  starting = { id: u.id, done }
+  void done.finally(() => {
+    if (starting?.done === done) starting = null
+  })
+  return done
 }
 
 function mapError(e: { message?: string; code?: string; status?: number }): AuthError {
