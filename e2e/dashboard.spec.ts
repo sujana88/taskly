@@ -23,7 +23,7 @@ test('the dashboard greets the user and summarises the week', async ({ page }) =
   await page.screenshot({ path: `${shots}/17-dashboard.png`, fullPage: true })
 
   // Ticking a deadline marks the task done.
-  await page.getByRole('checkbox', { name: 'Mark Hero section redesign as done' }).check()
+  await page.getByRole('checkbox', { name: 'Mark Hero section redesign as done' }).click()
   await expect(upcoming.first()).not.toContainText('Hero section redesign')
   await expect(page.getByText('2 of 8 tasks done')).toBeVisible()
 })

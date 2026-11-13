@@ -5,6 +5,7 @@ import { RequireAuth } from './features/auth/session'
 import { ClientsPage } from './features/clients/ClientsPage'
 import { DashboardPage } from './features/dashboard/DashboardPage'
 import { FocusPage } from './features/focus/FocusPage'
+import { HelpCenter } from './features/help/HelpCenter'
 import { ReportsPage } from './features/reports/ReportsPage'
 import { TasksPage } from './features/tasks/TasksPage'
 import { TimerEngine } from './features/timer/TimerEngine'
@@ -12,12 +13,13 @@ import { TimerEngine } from './features/timer/TimerEngine'
 function Shell() {
   return (
     <RequireAuth>
-      <div className="flex min-h-screen flex-col pb-24 md:flex-row md:pb-0">
+      <div className="flex min-h-screen flex-col pb-40 md:flex-row md:pb-16">
         <Sidebar />
         <Outlet />
       </div>
       <BottomNav />
       <TimerEngine />
+      <HelpCenter />
     </RequireAuth>
   )
 }

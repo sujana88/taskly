@@ -3,6 +3,24 @@ import { initReactI18next } from 'react-i18next'
 
 const en = {
   nav: { main: 'Main', hi: 'Hi, {{name}}', menu: 'Menu', dashboard: 'Dashboard', tasks: 'Tasks', focus: 'Focus', clients: 'Clients', reports: 'Reports', settings: 'Settings' },
+  help: {
+    button: 'Help',
+    buttonTitle: 'Help and guides (press ?)',
+    close: 'Close help',
+    search: 'Search help',
+    searchPlaceholder: 'Search, e.g. overlap, PDF, password',
+    sections: 'Help sections',
+    tab: { guide: 'Guide', terms: 'Terms', faq: 'FAQ', keys: 'Shortcuts' },
+    byPage: 'How each page works',
+    thisPage: 'This page',
+    openPage: 'Open {{page}}',
+    results_one: '{{count}} result for "{{query}}"',
+    results_other: '{{count}} results for "{{query}}"',
+    noResults: 'Nothing found. Try another word.',
+    clearSearch: 'Clear search',
+    kind: { step: 'Getting started', guide: 'Guide', term: 'Term', faq: 'FAQ' },
+    footer: 'Press ? anywhere to open help.',
+  },
   dash: {
     greeting: { morning: 'Good morning, {{name}}', afternoon: 'Good afternoon, {{name}}', late: 'Good afternoon, {{name}}', evening: 'Good evening, {{name}}', night: 'Working late, {{name}}?' },
     summary_one: '{{count}} task is due this week and {{progress}} are in progress.',
@@ -319,6 +337,24 @@ type Dict = typeof en
 
 const id: Dict = {
   nav: { main: 'Utama', hi: 'Hai, {{name}}', menu: 'Menu', dashboard: 'Dasbor', tasks: 'Tugas', focus: 'Fokus', clients: 'Klien', reports: 'Laporan', settings: 'Pengaturan' },
+  help: {
+    button: 'Bantuan',
+    buttonTitle: 'Bantuan dan panduan (tekan ?)',
+    close: 'Tutup bantuan',
+    search: 'Cari bantuan',
+    searchPlaceholder: 'Cari, misalnya overlap, PDF, kata sandi',
+    sections: 'Bagian bantuan',
+    tab: { guide: 'Panduan', terms: 'Istilah', faq: 'FAQ', keys: 'Pintasan' },
+    byPage: 'Cara pakai tiap halaman',
+    thisPage: 'Halaman ini',
+    openPage: 'Buka {{page}}',
+    results_one: '{{count}} hasil untuk "{{query}}"',
+    results_other: '{{count}} hasil untuk "{{query}}"',
+    noResults: 'Tidak ditemukan. Coba kata lain.',
+    clearSearch: 'Hapus pencarian',
+    kind: { step: 'Mulai cepat', guide: 'Panduan', term: 'Istilah', faq: 'FAQ' },
+    footer: 'Tekan ? di mana saja untuk membuka bantuan.',
+  },
   dash: {
     greeting: { morning: 'Selamat pagi, {{name}}', afternoon: 'Selamat siang, {{name}}', late: 'Selamat sore, {{name}}', evening: 'Selamat malam, {{name}}', night: 'Lembur malam ini, {{name}}?' },
     summary_one: '{{count}} tugas jatuh tempo minggu ini dan {{progress}} sedang dikerjakan.',

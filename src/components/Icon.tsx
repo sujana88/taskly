@@ -1,6 +1,7 @@
 import { useId, type SVGProps } from 'react'
 
 const paths = {
+  help: <><circle cx="12" cy="12" r="9.5" /><path d="M9.4 9.3a2.7 2.7 0 015.2 1c0 1.8-2.6 2.4-2.6 4" /><path d="M12 17.4h.01" strokeWidth={3} /></>,
   home: <><path d="M3 10.5L12 3l9 7.5" /><path d="M5 9v11h5v-6h4v6h5V9" /></>,
   download: <path d="M12 4v11M7 10l5 5 5-5M5 20h14" />,
   mail: <><rect x="3" y="5" width="18" height="14" rx="2" /><path d="M3 7l9 6 9-6" /></>,
