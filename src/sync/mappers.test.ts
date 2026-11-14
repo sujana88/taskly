@@ -20,9 +20,9 @@ const UID = '11111111-1111-4111-8111-111111111111'
 
 describe('sync mappers', () => {
   it('round-trips a client, normalising Postgres values', () => {
-    const c = { ...sampleClients[0], contactName: 'Lena' }
+    const c = { ...sampleClients[0], contactName: 'Lena', contactPhone: '+49 30 1234567', website: 'https://nordlicht.example', note: 'Prefers Friday updates.' }
     const row = clientToRow(c, UID)
-    expect(row).toMatchObject({ user_id: UID, work_start: '09:00', work_days: [1, 2, 3, 4, 5], contact_email: 'lena@nordlicht.example' })
+    expect(row).toMatchObject({ user_id: UID, work_start: '09:00', work_days: [1, 2, 3, 4, 5], contact_email: 'lena@nordlicht.example', contact_phone: '+49 30 1234567', website: 'https://nordlicht.example', note: 'Prefers Friday updates.' })
     // What Postgres sends back: time with seconds, numeric as text, char(3) padded.
     const back = clientFromRow({ ...row, work_start: '09:00:00', work_end: '17:00:00', hourly_rate: '45.00', currency: 'EUR' })
     expect(back).toEqual(c)

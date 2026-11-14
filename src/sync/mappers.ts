@@ -23,6 +23,9 @@ export interface ClientRow {
   currency: string
   contact_name: string | null
   contact_email: string | null
+  contact_phone: string | null
+  website: string | null
+  note: string | null
   archived: boolean
 }
 
@@ -110,6 +113,9 @@ export function clientFromRow(r: ClientRow): Client {
     archived: r.archived,
     ...(r.contact_name ? { contactName: r.contact_name } : {}),
     ...(r.contact_email ? { contactEmail: r.contact_email } : {}),
+    ...(r.contact_phone ? { contactPhone: r.contact_phone } : {}),
+    ...(r.website ? { website: r.website } : {}),
+    ...(r.note ? { note: r.note } : {}),
   }
 }
 
@@ -127,6 +133,9 @@ export function clientToRow(c: Client, userId: string): ClientRow {
     currency: c.currency,
     contact_name: c.contactName?.trim() || null,
     contact_email: c.contactEmail?.trim() || null,
+    contact_phone: c.contactPhone?.trim() || null,
+    website: c.website?.trim() || null,
+    note: c.note?.trim() || null,
     archived: c.archived,
   }
 }

@@ -9,7 +9,7 @@ import { useNow } from '../../hooks/useNow'
 import { utcOffset } from '../../lib/overlap'
 import { cityOf, formatInZone, myTimezone } from '../../lib/time'
 import { DEFAULT_HOURS } from '../auth/auth'
-import { CLIENT_COLORS, CURRENCIES, addProject, allTimezones, createClient, renameProject, setClientArchived, setProjectArchived, toInput, updateClient, validateClient, type ClientInput } from './actions'
+import { CLIENT_COLORS, CURRENCIES, NOTE_MAX, normalizeWebsite, addProject, allTimezones, createClient, renameProject, setClientArchived, setProjectArchived, toInput, updateClient, validateClient, type ClientInput } from './actions'
 
 const label = 'text-[13px] font-semibold text-slate-700'
 const field = 'min-h-11 w-full min-w-0 rounded-[10px] border border-line bg-white px-3 text-[15px] outline-none focus:border-accent'
@@ -83,7 +83,7 @@ export function ClientDialog({ open, client, onClose }: { open: boolean; client?
 
 function ClientForm({ client, onDone }: { client?: Client; onDone: () => void }) {
   const { t } = useTranslation()
-  const ids = { name: useId(), tz: useId(), rate: useId(), cur: useId(), form: useId(), contact: useId(), email: useId() }
+  const ids = { name: useId(), tz: useId(), rate: useId(), cur: useId(), form: useId(), contact: useId(), email: useId(), phone: useId(), website: useId(), note: useId() }
   const [form, setForm] = useState<ClientInput>(() =>
     client ? toInput(client) : { name: '', color: CLIENT_COLORS[0], timezone: myTimezone(), workHours: DEFAULT_HOURS, hourlyRate: 0, currency: 'USD' },
   )
@@ -181,7 +181,51 @@ function ClientForm({ client, onDone }: { client?: Client; onDone: () => void })
             <label htmlFor={ids.email} className={label}>
               {t('clients.form.contactEmail')}
             </label>
-            <input id={ids.email} type="email" value={form.contactEmail ?? ''} onChange={(e) => setForm({ ...form, contactEmail: e.target.value })} autoComplete="off" className={field} />
+            <input
+              id={ids.email}
+              type="email"
+              value={form.contactEmail ?? ''}
+              onChange={(e) => setForm({ ...form, contactEmail: e.target.value })}
+              autoComplete="off"
+              aria-invalid={!!show('email')}
+              className={`${field} ${show('email') ? 'border-red-600' : ''}`}
+            />
+            {show('email') && <p className="m-0 text-[13px] text-red-700">{show('email')}</p>}
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <label htmlFor={ids.phone} className={label}>
+              {t('clients.form.contactPhone')}
+            </label>
+            <input
+              id={ids.phone}
+              type="tel"
+              inputMode="tel"
+              value={form.contactPhone ?? ''}
+              onChange={(e) => setForm({ ...form, contactPhone: e.target.value })}
+              placeholder="+62 812 3456 7890"
+              autoComplete="off"
+              aria-invalid={!!show('phone')}
+              className={`${field} tabular-nums ${show('phone') ? 'border-red-600' : ''}`}
+            />
+            {show('phone') && <p className="m-0 text-[13px] text-red-700">{show('phone')}</p>}
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <label htmlFor={ids.website} className={label}>
+              {t('clients.form.website')}
+            </label>
+            <input
+              id={ids.website}
+              type="url"
+              inputMode="url"
+              value={form.website ?? ''}
+              onChange={(e) => setForm({ ...form, website: e.target.value })}
+              onBlur={() => setForm((f) => ({ ...f, website: normalizeWebsite(f.website) }))}
+              placeholder="nordlicht.example"
+              autoComplete="off"
+              aria-invalid={!!show('website')}
+              className={`${field} ${show('website') ? 'border-red-600' : ''}`}
+            />
+            {show('website') && <p className="m-0 text-[13px] text-red-700">{show('website')}</p>}
           </div>
         </div>
 
@@ -212,6 +256,27 @@ function ClientForm({ client, onDone }: { client?: Client; onDone: () => void })
               ))}
             </select>
           </div>
+        </div>
+
+        <div className="flex flex-col gap-1.5">
+          <div className="flex items-baseline justify-between gap-3">
+            <label htmlFor={ids.note} className={label}>
+              {t('clients.form.note')}
+            </label>
+            <span className={`text-xs tabular-nums ${(form.note ?? '').length > NOTE_MAX ? 'font-semibold text-red-700' : 'text-muted'}`}>
+              {(form.note ?? '').length}/{NOTE_MAX}
+            </span>
+          </div>
+          <textarea
+            id={ids.note}
+            value={form.note ?? ''}
+            onChange={(e) => setForm({ ...form, note: e.target.value })}
+            placeholder={t('clients.form.notePlaceholder')}
+            rows={3}
+            aria-invalid={!!show('note')}
+            className={`w-full resize-y rounded-[10px] border bg-white px-3 py-2.5 text-[15px] leading-relaxed outline-none focus:border-accent ${show('note') ? 'border-red-600' : 'border-line'}`}
+          />
+          {show('note') && <p className="m-0 text-[13px] text-red-700">{show('note')}</p>}
         </div>
       </form>
 

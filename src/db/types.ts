@@ -21,6 +21,12 @@ export interface Client {
   /** Who receives updates, e.g. "Lena". Optional. */
   contactName?: string
   contactEmail?: string
+  /** Optional, e.g. "+62 812 3456 7890". */
+  contactPhone?: string
+  /** Optional, always stored with http(s)://. */
+  website?: string
+  /** Optional free text about the client. */
+  note?: string
 }
 
 export interface Project {

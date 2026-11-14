@@ -62,6 +62,17 @@ test('adds a client, then edits, archives and restores it', async ({ page }) => 
   await expect(dialog).toContainText('Working hours in Tokyo')
   await dialog.getByLabel('Hourly rate').fill('8000')
   await dialog.getByLabel('Currency').selectOption('JPY')
+
+  // Phone, website and note: checked, tidied (https:// added) and saved.
+  await dialog.getByLabel('Phone number').fill('call me')
+  await dialog.getByRole('button', { name: 'Add client' }).click()
+  await expect(dialog.getByText('Use digits, spaces and + ( ) - only, 6 to 30 characters.')).toBeVisible()
+  await dialog.getByLabel('Phone number').fill('+81 3-1234-5678')
+  await dialog.getByLabel('Website').fill('tokyo-ramen.example')
+  await dialog.getByLabel('Website').blur()
+  await expect(dialog.getByLabel('Website')).toHaveValue('https://tokyo-ramen.example')
+  await dialog.getByLabel('Note').fill('Invoices in JPY, monthly. Prefers LINE for quick questions.')
+  await expect(dialog.getByText('59/4000')).toBeVisible()
   await page.screenshot({ path: `${shots}/15-add-client.png` })
   await dialog.getByRole('button', { name: 'Add client' }).click()
   await expect(dialog).toBeHidden()
@@ -78,6 +89,9 @@ test('adds a client, then edits, archives and restores it', async ({ page }) => 
 
   await row(page, 'Tokyo Ramen').getByRole('button', { name: 'Edit Tokyo Ramen' }).click()
   const edit = page.getByRole('dialog', { name: 'Edit Tokyo Ramen' })
+  await expect(edit.getByLabel('Phone number')).toHaveValue('+81 3-1234-5678')
+  await expect(edit.getByLabel('Website')).toHaveValue('https://tokyo-ramen.example')
+  await expect(edit.getByLabel('Note')).toHaveValue('Invoices in JPY, monthly. Prefers LINE for quick questions.')
   await edit.getByPlaceholder('Add a project').fill('Menu app')
   await edit.getByPlaceholder('Add a project').press('Enter')
   await expect(edit.getByLabel('Project name')).toHaveCount(2)

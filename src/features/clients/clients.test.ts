@@ -51,3 +51,35 @@ describe('client actions', () => {
     expect(formatRate(250000, 'IDR', 'id')).toMatch(/^Rp\s?250\.000$/)
   })
 })
+
+describe('contact details', () => {
+  const base: ClientInput = { name: 'Studio', color: '#0E7490', timezone: 'UTC', workHours: { start: '09:00', end: '17:00', days: [1] }, hourlyRate: 10, currency: 'USD' }
+
+  it('adds https:// to a website typed without it', async () => {
+    const { normalizeWebsite } = await import('./actions')
+    expect(normalizeWebsite('nordlicht.example')).toBe('https://nordlicht.example')
+    expect(normalizeWebsite(' http://a.io/x ')).toBe('http://a.io/x')
+    expect(normalizeWebsite('  ')).toBe('')
+  })
+
+  it('checks phone, website, email and note length (all optional)', () => {
+    expect(validateClient({ ...base, contactPhone: '', website: '', note: '' })).toEqual({})
+    expect(validateClient({ ...base, contactPhone: '+62 812-3456-7890', website: 'studio.com', contactEmail: 'lena@studio.com' })).toEqual({})
+    expect(validateClient({ ...base, contactPhone: 'call me', website: 'not a site', contactEmail: 'lena@', note: 'x'.repeat(4001) })).toEqual({
+      phone: 'phoneFormat',
+      website: 'websiteFormat',
+      email: 'emailFormat',
+      note: 'noteLong',
+    })
+  })
+
+  it('stores the new fields tidied, and clearing them removes them', async () => {
+    const id = await createClient({ ...base, contactPhone: ' +49 30 1234567 ', website: 'nordlicht.example', note: '  Prefers Friday updates.  ' })
+    expect(await db.clients.get(id)).toMatchObject({ contactPhone: '+49 30 1234567', website: 'https://nordlicht.example', note: 'Prefers Friday updates.' })
+    await updateClient(id, { ...base, contactPhone: '', website: '', note: '' })
+    const after = await db.clients.get(id)
+    expect(after).not.toHaveProperty('contactPhone')
+    expect(after).not.toHaveProperty('website')
+    expect(after).not.toHaveProperty('note')
+  })
+})
