@@ -7,9 +7,10 @@ import { db } from '../../db/db'
 import type { Client, WorkHours } from '../../db/types'
 import { useNow } from '../../hooks/useNow'
 import { utcOffset } from '../../lib/overlap'
+import { currencyLabel } from '../../lib/currency'
 import { cityOf, formatInZone, myTimezone } from '../../lib/time'
 import { DEFAULT_HOURS } from '../auth/auth'
-import { CLIENT_COLORS, CURRENCIES, NOTE_MAX, normalizeWebsite, addProject, allTimezones, createClient, renameProject, setClientArchived, setProjectArchived, toInput, updateClient, validateClient, type ClientInput } from './actions'
+import { CLIENT_COLORS, CURRENCIES, NOTE_MAX, formatRate, normalizeWebsite, addProject, allTimezones, createClient, renameProject, setClientArchived, setProjectArchived, toInput, updateClient, validateClient, type ClientInput } from './actions'
 
 const label = 'text-[13px] font-semibold text-slate-700'
 const field = 'min-h-11 w-full min-w-0 rounded-[10px] border border-line bg-white px-3 text-[15px] outline-none focus:border-accent'
@@ -82,7 +83,8 @@ export function ClientDialog({ open, client, onClose }: { open: boolean; client?
 }
 
 function ClientForm({ client, onDone }: { client?: Client; onDone: () => void }) {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
+  const lang = i18n.resolvedLanguage ?? 'en'
   const ids = { name: useId(), tz: useId(), rate: useId(), cur: useId(), form: useId(), contact: useId(), email: useId(), phone: useId(), website: useId(), note: useId() }
   const [form, setForm] = useState<ClientInput>(() =>
     client ? toInput(client) : { name: '', color: CLIENT_COLORS[0], timezone: myTimezone(), workHours: DEFAULT_HOURS, hourlyRate: 0, currency: 'USD' },
@@ -229,8 +231,8 @@ function ClientForm({ client, onDone }: { client?: Client; onDone: () => void })
           </div>
         </div>
 
-        <div className="grid grid-cols-[1fr_140px] gap-3">
-          <div className="flex flex-col gap-1.5">
+        <div className="grid grid-cols-[minmax(0,1fr)_minmax(150px,190px)] gap-3">
+          <div className="flex min-w-0 flex-col gap-1.5">
             <label htmlFor={ids.rate} className={label}>
               {t('clients.form.rate')}
             </label>
@@ -241,17 +243,21 @@ function ClientForm({ client, onDone }: { client?: Client; onDone: () => void })
               min={0}
               value={Number.isFinite(form.hourlyRate) ? form.hourlyRate : ''}
               onChange={(e) => setForm({ ...form, hourlyRate: e.target.value === '' ? 0 : Number(e.target.value) })}
+              aria-describedby={`${ids.rate}-preview`}
               className={`${field} tabular-nums`}
             />
+            <p id={`${ids.rate}-preview`} className="m-0 text-[13px] text-muted" data-testid="rate-preview">
+              {t('clients.form.ratePreview', { rate: formatRate(form.hourlyRate || 0, form.currency, lang) })}
+            </p>
           </div>
-          <div className="flex flex-col gap-1.5">
+          <div className="flex min-w-0 flex-col gap-1.5">
             <label htmlFor={ids.cur} className={label}>
               {t('clients.form.currency')}
             </label>
-            <select id={ids.cur} value={form.currency} onChange={(e) => setForm({ ...form, currency: e.target.value })} className={field}>
+            <select id={ids.cur} value={form.currency} onChange={(e) => setForm({ ...form, currency: e.target.value })} className={`${field} pr-8`}>
               {(CURRENCIES.includes(form.currency) ? CURRENCIES : [form.currency, ...CURRENCIES]).map((c) => (
                 <option key={c} value={c}>
-                  {c}
+                  {currencyLabel(c)}
                 </option>
               ))}
             </select>

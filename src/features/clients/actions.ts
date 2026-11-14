@@ -1,5 +1,6 @@
 import { db } from '../../db/db'
 import type { Client, WorkHours } from '../../db/types'
+import { formatMoney } from '../../lib/currency'
 
 export const CLIENT_COLORS = ['#0E7490', '#C2410C', '#6D28D9', '#15803D', '#BE185D', '#1D4ED8', '#B45309', '#475569']
 export const CURRENCIES = ['USD', 'EUR', 'GBP', 'AUD', 'CAD', 'SGD', 'JPY', 'IDR', 'MYR', 'INR', 'CHF', 'NZD']
@@ -114,7 +115,7 @@ export function toInput(c: Client): ClientInput {
     timezone: c.timezone,
     workHours: c.workHours,
     hourlyRate: c.hourlyRate,
-    currency: c.currency,
+    currency: c.currency.trim().toUpperCase(),
     contactName: c.contactName ?? '',
     contactEmail: c.contactEmail ?? '',
     contactPhone: c.contactPhone ?? '',
@@ -134,14 +135,8 @@ export function allTimezones(): string[] {
   return list.includes('UTC') ? list : ['UTC', ...list]
 }
 
-const NO_CENTS = new Set(['IDR', 'JPY', 'KRW', 'VND', 'CLP', 'ISK'])
 
+/** Rates and amounts with a clear sign: "US $60", "A $70", "Rp 250.000". See src/lib/currency.ts. */
 export function formatRate(amount: number, currency: string, lang: string): string {
-  try {
-    // Whole numbers show no decimals; currencies without small units (Rupiah, Yen…) never do.
-    const digits = NO_CENTS.has(currency) || Number.isInteger(amount) ? 0 : 2
-    return new Intl.NumberFormat(lang === 'id' ? 'id-ID' : 'en-US', { style: 'currency', currency, minimumFractionDigits: digits, maximumFractionDigits: digits }).format(amount)
-  } catch {
-    return `${currency} ${amount}`
-  }
+  return formatMoney(amount, currency, lang)
 }

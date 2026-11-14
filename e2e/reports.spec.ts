@@ -26,7 +26,7 @@ test('summarises the week with tiles, charts and a timesheet', async ({ page }) 
   const rows = page.getByTestId('timesheet').locator('tbody tr')
   await expect(rows).toHaveCount(4)
   await expect(rows.nth(0)).toContainText('Nordlicht Studio9h 15m€45€416.25')
-  await expect(rows.nth(3)).toContainText('Warung Rasa2h 40mIDR 250,000IDR 666,667')
+  await expect(rows.nth(3)).toContainText('Warung Rasa2h 40mRp 250.000Rp 666.667')
   await page.screenshot({ path: `${shots}/18-reports.png`, fullPage: true })
 
   // Last week has no data; the next-week button is off for the current week.
