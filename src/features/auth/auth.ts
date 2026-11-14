@@ -107,17 +107,17 @@ export async function logIn(email: string, password: string): Promise<User> {
   return user
 }
 
-/** One-time sign-in links by email need a real mail server, so they exist only with Supabase. */
-export const supportsEmailLink = BACKEND === 'supabase'
+/** Reset emails need a real mail server, so they exist only with Supabase. */
+export const supportsEmailReset = BACKEND === 'supabase'
 
 /**
- * Email a one-time login link. Resolves the same way whether or not an account exists for the
- * address, so the form never reveals who has an account.
+ * Email a password-reset link. Resolves the same way whether or not an account exists for the
+ * address, so the form never reveals who has an account. The link opens the "new password" page.
  */
-export async function sendLoginLink(email: string): Promise<void> {
+export async function requestPasswordReset(email: string): Promise<void> {
   if (!EMAIL_RE.test(email.trim())) throw new AuthError('emailInvalid')
   if (BACKEND !== 'supabase') throw new AuthError('unavailable')
-  await (await cloud()).cloudSendLoginLink(email)
+  await (await cloud()).cloudRequestPasswordReset(email)
 }
 
 /**

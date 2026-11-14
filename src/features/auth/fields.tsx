@@ -15,8 +15,11 @@ export function Field({
   onBlur,
   autoFocus,
   children,
+  labelAction,
 }: {
   label: string
+  /** Something to show at the right of the label, e.g. a "Forgot password?" link. */
+  labelAction?: ReactNode
   type?: string
   value: string
   onChange: (v: string) => void
@@ -34,9 +37,12 @@ export function Field({
   const describedBy = error ? `${id}-err` : hint ? `${id}-hint` : undefined
   return (
     <div className="flex flex-col gap-1.5">
-      <label htmlFor={id} className="text-[13px] font-bold text-slate-700">
-        {label}
-      </label>
+      <div className="flex items-baseline justify-between gap-3">
+        <label htmlFor={id} className="text-[13px] font-bold text-slate-700">
+          {label}
+        </label>
+        {labelAction}
+      </div>
       <div className={`flex items-center rounded-2xl border bg-slate-50 transition-colors focus-within:border-accent focus-within:bg-white focus-within:ring-4 focus-within:ring-blue-100 ${error ? 'border-red-500' : 'border-line'}`}>
         <input
           id={id}
@@ -48,7 +54,7 @@ export function Field({
           autoFocus={autoFocus}
           aria-invalid={!!error}
           aria-describedby={describedBy}
-          className="min-h-12 w-full min-w-0 rounded-2xl border-none bg-transparent px-4 text-[15px] outline-none"
+          className="min-h-12 w-full min-w-0 rounded-2xl border-none bg-transparent px-4 text-[15px] outline-none focus-visible:outline-none"
         />
         {isPassword && (
           <button

@@ -113,7 +113,7 @@ const en: HelpContent = {
   faq: [
     { q: 'Where is my data stored?', a: 'In your Taskly account (Supabase), with a copy on this device so the app works offline. Changes sync to your other devices within seconds, and logging out removes the copy from this device.' },
     { q: 'Do I need to confirm my email?', a: 'Usually yes: after signing up, open the link in the email we send you, then log in. Check your spam folder if it does not arrive within a few minutes.' },
-    { q: 'Can I log in without a password? How do I change it?', a: 'On the login page choose "Email me a login link" and open the one-time link we send. To set or change your password, open Profile (click your name in the sidebar); your old password is not needed.' },
+    { q: 'I forgot my password. What now?', a: 'On the login page click "Forgot password?", enter your email and open the reset link we send (it works once and expires after an hour). To change a password you still know, open Profile; the old one is not needed.' },
     { q: 'Why does a deadline show two times?', a: 'The first is your time; the second is the client\'s local time, shown when the two differ, so you both read the same deadline.' },
     { q: 'What happens if I travel to another time zone?', a: 'Taskly uses this device\'s time zone. Deadlines keep the same moment and are simply shown in your new local time.' },
     { q: 'Does the timer keep running if I close the tab?', a: 'Yes. Timers are saved, and a Pomodoro focus session that runs out while the tab is closed is logged to the exact minute it ended.' },
@@ -225,7 +225,7 @@ const id: HelpContent = {
   faq: [
     { q: 'Di mana data saya disimpan?', a: 'Di akun Taskly Anda (Supabase), dengan salinan di perangkat ini agar aplikasi tetap jalan saat offline. Perubahan tersinkron ke perangkat lain dalam hitungan detik, dan keluar akun menghapus salinan di perangkat ini.' },
     { q: 'Apakah saya perlu mengonfirmasi email?', a: 'Biasanya ya: setelah daftar, buka tautan di email yang kami kirim, lalu masuk. Cek folder spam bila tidak datang dalam beberapa menit.' },
-    { q: 'Bisakah masuk tanpa kata sandi? Bagaimana mengubahnya?', a: 'Di halaman masuk pilih "Kirim link login ke email" lalu buka link sekali pakai yang kami kirim. Untuk membuat atau mengubah kata sandi, buka Profil (klik nama Anda di sidebar); kata sandi lama tidak diperlukan.' },
+    { q: 'Saya lupa kata sandi. Bagaimana?', a: 'Di halaman masuk klik "Lupa kata sandi?", masukkan email Anda, lalu buka link reset yang kami kirim (hanya bisa dipakai sekali dan berlaku satu jam). Untuk mengubah kata sandi yang masih Anda ingat, buka Profil; kata sandi lama tidak diperlukan.' },
     { q: 'Mengapa tenggat menampilkan dua waktu?', a: 'Yang pertama waktu Anda; yang kedua waktu lokal klien, ditampilkan bila berbeda, agar Anda dan klien membaca tenggat yang sama.' },
     { q: 'Bagaimana kalau saya bepergian ke zona waktu lain?', a: 'Taskly memakai zona waktu perangkat ini. Tenggat tetap pada momen yang sama, hanya ditampilkan dalam waktu lokal Anda yang baru.' },
     { q: 'Apakah timer tetap berjalan jika tab ditutup?', a: 'Ya. Timer tersimpan, dan sesi fokus Pomodoro yang habis saat tab tertutup dicatat tepat pada menit berakhirnya.' },

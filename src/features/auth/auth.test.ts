@@ -83,10 +83,10 @@ describe('password change and login links', () => {
     await expect(changePassword('another123', 'another123')).rejects.toMatchObject({ code: 'unknown' })
   })
 
-  it('login links need the server; local mode says so', async () => {
-    const { sendLoginLink, supportsEmailLink } = await import('./auth')
-    expect(supportsEmailLink).toBe(false)
-    await expect(sendLoginLink('not-an-email')).rejects.toMatchObject({ code: 'emailInvalid' })
-    await expect(sendLoginLink('ayu@example.com')).rejects.toMatchObject({ code: 'unavailable' })
+  it('reset emails need the server; local mode says so', async () => {
+    const { requestPasswordReset, supportsEmailReset } = await import('./auth')
+    expect(supportsEmailReset).toBe(false)
+    await expect(requestPasswordReset('not-an-email')).rejects.toMatchObject({ code: 'emailInvalid' })
+    await expect(requestPasswordReset('ayu@example.com')).rejects.toMatchObject({ code: 'unavailable' })
   })
 })

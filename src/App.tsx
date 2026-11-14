@@ -1,6 +1,7 @@
 import { HashRouter, Outlet, Route, Routes } from 'react-router-dom'
 import { BottomNav, Sidebar } from './components/Sidebar'
 import { LoginPage, SignupPage } from './features/auth/AuthPages'
+import { ForgotPasswordPage, ResetPasswordPage } from './features/auth/PasswordReset'
 import { RequireAuth } from './features/auth/session'
 import { ClientsPage } from './features/clients/ClientsPage'
 import { DashboardPage } from './features/dashboard/DashboardPage'
@@ -32,6 +33,8 @@ export default function App() {
       <Routes>
         <Route path="/login" element={<LoginPage />} />
         <Route path="/signup" element={<SignupPage />} />
+        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+        <Route path="/reset-password" element={<ResetPasswordPage />} />
         <Route element={<Shell />}>
           <Route path="/" element={<DashboardPage />} />
           <Route path="/tasks" element={<TasksPage />} />

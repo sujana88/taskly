@@ -5,10 +5,10 @@ import { AppIcon, type AppIconName } from '../../components/AppIcon'
 import { Icon, Logo } from '../../components/Icon'
 import { DEMO_USER } from '../../db/seed'
 import { BACKEND } from '../../lib/supabase'
-import { AuthError, MIN_PASSWORD, logIn, sendLoginLink, signUp, supportsEmailLink, useSession, validateSignUp, type AuthErrorCode, type SignUpInput } from './auth'
+import { AuthError, MIN_PASSWORD, logIn, signUp, useSession, validateSignUp, type AuthErrorCode, type SignUpInput } from './auth'
 import { Field, FormError, Strength, primaryBtn } from './fields'
 
-type Mode = 'login' | 'signup'
+type Mode = 'login' | 'signup' | 'forgot' | 'reset'
 
 function useAfterAuth() {
   const navigate = useNavigate()
@@ -37,11 +37,12 @@ function LanguageSwitch() {
   )
 }
 
-function AuthLayout({ mode, icon, title, subtitle, children, below }: { mode: Mode; icon: AppIconName; title: string; subtitle: string; children: ReactNode; below: ReactNode }) {
+export function AuthLayout({ mode, icon, title, subtitle, children, below }: { mode: Mode; icon: AppIconName; title: string; subtitle: string; children: ReactNode; below: ReactNode }) {
   const { t } = useTranslation()
   const location = useLocation()
   const userId = useSession((s) => s.userId)
-  if (userId) return <Navigate to="/" replace />
+  // Signed-in users skip log-in pages; the reset page is for (recovery-)signed-in users, so it stays.
+  if (userId && mode !== 'reset') return <Navigate to="/" replace />
 
   const tab = (m: Mode) =>
     `flex min-h-10 flex-1 items-center justify-center rounded-xl text-sm font-bold no-underline transition-colors ${
@@ -90,6 +91,7 @@ function AuthLayout({ mode, icon, title, subtitle, children, below }: { mode: Mo
 
         <div className="mx-auto flex w-full max-w-[420px] flex-1 flex-col justify-center gap-5 py-8">
           <div className="flex flex-col gap-6 rounded-[28px] bg-white p-6 shadow-card ring-1 ring-line/70 sm:p-8">
+            {(mode === 'login' || mode === 'signup') && (
             <nav aria-label={t('auth.choose')} className="flex gap-1 rounded-2xl bg-slate-100 p-1">
               <Link to="/login" state={location.state} aria-current={mode === 'login' ? 'page' : undefined} className={tab('login')} data-testid="tab-login">
                 {t('auth.login')}
@@ -98,6 +100,7 @@ function AuthLayout({ mode, icon, title, subtitle, children, below }: { mode: Mo
                 {t('auth.signup')}
               </Link>
             </nav>
+            )}
             <div className="flex items-start gap-3.5">
               <span className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-accent-soft">
                 <AppIcon name={icon} size={28} />
@@ -141,7 +144,6 @@ export function LoginPage() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState<AuthErrorCode | null>(null)
   const [busy, setBusy] = useState(false)
-  const [useLink, setUseLink] = useState(false)
 
   const attempt = async (e: string, p: string) => {
     setBusy(true)
@@ -178,33 +180,24 @@ export function LoginPage() {
         </>
       }
     >
-      {useLink ? (
-        <EmailLinkForm initialEmail={email} onBack={() => setUseLink(false)} />
-      ) : (
       <form onSubmit={submit} className="flex flex-col gap-4" noValidate>
         <FormError code={error} />
         <Field label={t('auth.email')} type="email" value={email} onChange={setEmail} autoComplete="email" autoFocus />
-        <Field label={t('auth.password')} type="password" value={password} onChange={setPassword} autoComplete="current-password" />
+        <Field
+          label={t('auth.password')}
+          type="password"
+          value={password}
+          onChange={setPassword}
+          autoComplete="current-password"
+          labelAction={
+            <Link to="/forgot-password" state={{ email }} className="text-[13px] font-bold text-accent no-underline hover:underline">
+              {t('auth.forgot.link')}
+            </Link>
+          }
+        />
         <button type="submit" disabled={busy || !email || !password} className={primaryBtn}>
           {t('auth.login')}
         </button>
-        {supportsEmailLink && (
-          <>
-            <div className="flex items-center gap-3 text-xs text-muted">
-              <span className="h-px flex-1 bg-line" />
-              {t('auth.or')}
-              <span className="h-px flex-1 bg-line" />
-            </div>
-            <button
-              type="button"
-              onClick={() => setUseLink(true)}
-              className="flex min-h-12 w-full items-center justify-center gap-2.5 rounded-2xl border border-line bg-white px-4 text-[15px] font-bold hover:bg-slate-50"
-            >
-              <Icon name="mail" size={18} className="text-accent" />
-              {t('auth.link.open')}
-            </button>
-          </>
-        )}
         {/* The demo account exists only in local mode (no server). */}
         {BACKEND === 'local' && (
           <>
@@ -225,68 +218,7 @@ export function LoginPage() {
           </>
         )}
       </form>
-      )}
     </AuthLayout>
-  )
-}
-
-/** Passwordless sign-in: email a one-time link (Supabase magic link). */
-function EmailLinkForm({ initialEmail, onBack }: { initialEmail: string; onBack: () => void }) {
-  const { t } = useTranslation()
-  const [email, setEmail] = useState(initialEmail)
-  const [error, setError] = useState<AuthErrorCode | null>(null)
-  const [busy, setBusy] = useState(false)
-  const [sentTo, setSentTo] = useState<string | null>(null)
-
-  const send = async (ev?: FormEvent) => {
-    ev?.preventDefault()
-    setBusy(true)
-    setError(null)
-    try {
-      await sendLoginLink(email)
-      setSentTo(email.trim())
-    } catch (err) {
-      setError(err instanceof AuthError ? err.code : 'unknown')
-    } finally {
-      setBusy(false)
-    }
-  }
-
-  const back = (
-    <button type="button" onClick={onBack} className="self-center text-sm font-bold text-accent hover:underline">
-      {t('auth.link.usePassword')}
-    </button>
-  )
-
-  if (sentTo)
-    return (
-      <div className="flex flex-col gap-4">
-        <div role="status" className="flex flex-col items-start gap-2 rounded-2xl bg-green-50 p-5 text-sm text-green-900" data-testid="link-sent">
-          <span className="flex size-10 items-center justify-center rounded-xl bg-white text-green-700 shadow-sm">
-            <Icon name="mail" size={20} />
-          </span>
-          <strong className="text-base">{t('auth.link.sentTitle')}</strong>
-          <span>{t('auth.link.sentBody', { email: sentTo })}</span>
-        </div>
-        <FormError code={error} />
-        <button type="button" onClick={() => void send()} disabled={busy} className="min-h-11 rounded-2xl border border-line bg-white px-4 text-sm font-bold hover:bg-slate-50 disabled:opacity-60">
-          {t('auth.link.resend')}
-        </button>
-        {back}
-      </div>
-    )
-
-  return (
-    <form onSubmit={(e) => void send(e)} className="flex flex-col gap-4" noValidate data-testid="link-form">
-      <p className="m-0 text-sm text-slate-600">{t('auth.link.intro')}</p>
-      <FormError code={error} />
-      <Field label={t('auth.email')} type="email" value={email} onChange={setEmail} autoComplete="email" autoFocus />
-      <button type="submit" disabled={busy || !email} className={primaryBtn}>
-        <Icon name="send" size={16} />
-        {busy ? t('auth.link.sending') : t('auth.link.send')}
-      </button>
-      {back}
-    </form>
   )
 }
 

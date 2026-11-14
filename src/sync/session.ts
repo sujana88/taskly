@@ -3,7 +3,9 @@ import type { User as SupabaseUser } from '@supabase/supabase-js'
 import { db } from '../db/db'
 import type { User } from '../db/types'
 import { AuthError, useSession } from '../features/auth/auth'
-import { supabase } from '../lib/supabase'
+import { resetRedirectUrl } from '../lib/authLink'
+import { AUTH_LINK, supabase } from '../lib/supabase'
+import { useRecovery } from '../features/auth/recovery'
 import { startSync, stopSync } from './engine'
 
 const nameOf = (u: SupabaseUser) => String(u.user_metadata?.name ?? '').trim() || (u.email ?? '').split('@')[0]
@@ -68,14 +70,20 @@ export async function cloudLogIn(email: string, password: string): Promise<User>
 
 const redirectTo = () => `${window.location.origin}${window.location.pathname}`
 
-/** Magic link: one-time use, expires after Supabase's link validity. Never creates an account. */
-export async function cloudSendLoginLink(email: string): Promise<void> {
-  const { error } = await supabase!.auth.signInWithOtp({ email: email.trim(), options: { shouldCreateUser: false, emailRedirectTo: redirectTo() } })
-  if (!error) return
-  const msg = `${error.code ?? ''} ${error.message ?? ''}`.toLowerCase()
-  // No account for this address: answer like a success so the form does not reveal who is registered.
-  if (msg.includes('signup') || msg.includes('not allowed') || msg.includes('otp_disabled') || msg.includes('user not found')) return
-  throw mapError(error)
+/** Replace the address (dropping ?reset=1 and any token fragment) with an in-app route. */
+function openAuthPage(route: '/reset-password' | '/forgot-password', state: { active?: boolean; linkError?: string }) {
+  useRecovery.getState().set({ active: !!state.active, linkError: state.linkError ?? null })
+  window.history.replaceState(null, '', `${window.location.pathname}#${route}`)
+  window.dispatchEvent(new HashChangeEvent('hashchange'))
+}
+
+/**
+ * Password reset email. Supabase answers the same for unknown addresses, so nobody can probe which
+ * emails have accounts. The one-time link returns to this page marked `?reset=1`.
+ */
+export async function cloudRequestPasswordReset(email: string): Promise<void> {
+  const { error } = await supabase!.auth.resetPasswordForEmail(email.trim(), { redirectTo: resetRedirectUrl(window.location.origin, window.location.pathname) })
+  if (error) throw mapError(error)
 }
 
 /** New password without the old one. If Supabase requires reauthentication, it emails a code first. */
@@ -114,7 +122,16 @@ export async function initCloudSession(): Promise<void> {
   if (data.session?.user) await begin(data.session.user)
   else useSession.getState().setUserId(null)
 
+  // Arrived from a reset email: open "choose a new password" (or explain why the link failed).
+  if (AUTH_LINK.error) openAuthPage('/forgot-password', { linkError: AUTH_LINK.error })
+  else if (AUTH_LINK.recovery && data.session) openAuthPage('/reset-password', { active: true })
+  else if (AUTH_LINK.recovery) openAuthPage('/forgot-password', { linkError: 'invalid_link' })
+
   supabase!.auth.onAuthStateChange((event, session) => {
+    if (event === 'PASSWORD_RECOVERY' && session?.user) {
+      void begin(session.user).then(() => openAuthPage('/reset-password', { active: true }))
+      return
+    }
     if (event === 'SIGNED_IN' && session?.user && useSession.getState().userId !== session.user.id) void begin(session.user)
     if (event === 'SIGNED_OUT' && useSession.getState().userId) {
       void stopSync(true).then(() => useSession.getState().setUserId(null))

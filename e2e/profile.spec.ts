@@ -35,7 +35,8 @@ test('profile: change name, hours and password (no old password), then log in wi
 
   await page.getByRole('button', { name: 'Log out' }).last().click()
   await expect(page).toHaveURL(/#\/login/)
-  // Local mode has no email login links (they need a mail server).
+  // The login page offers password recovery instead of passwordless links.
+  await expect(page.getByRole('link', { name: 'Forgot password?' })).toBeVisible()
   await expect(page.getByRole('button', { name: 'Email me a login link' })).toHaveCount(0)
 
   await page.getByLabel('Email').fill('rina@example.com')
