@@ -1,6 +1,6 @@
 /**
  * Money display. Every dollar currency gets letters in front of "$" so they can't be confused
- * (US $, A $, N $, C $, S $); other currencies use their own sign. Numbers are written the
+ * (US $, AU $, NZ $, CA $, SG $); other currencies use their own sign. Numbers are written the
  * Indonesian way in every language: dot for thousands, comma for decimals ("US $ 1.234,50"),
  * and Rupiah ends with ",-" ("Rp 834.123,-").
  */
@@ -8,10 +8,10 @@
 /** Sign shown for each currency the app offers. Unknown codes fall back to the code itself. */
 export const CURRENCY_SYMBOL: Record<string, string> = {
   USD: 'US $',
-  AUD: 'A $',
-  NZD: 'N $',
-  CAD: 'C $',
-  SGD: 'S $',
+  AUD: 'AU $',
+  NZD: 'NZ $',
+  CAD: 'CA $',
+  SGD: 'SG $',
   HKD: 'HK $',
   EUR: '€',
   GBP: '£',
@@ -29,7 +29,7 @@ export function currencySymbol(code: string): string {
   return CURRENCY_SYMBOL[code] ?? code
 }
 
-/** "US $ 534,48", "A $ 70", "€ 416,25", "Rp 834.123,-", "¥ 8.000", "CHF 30". */
+/** "US $ 534,48", "AU $ 70", "€ 416,25", "Rp 834.123,-", "¥ 8.000", "CHF 30". */
 // `lang` is kept so callers don't change; the number format no longer depends on it.
 export function formatMoney(amount: number, currency: string, _lang?: string): string {
   const digits = NO_CENTS.has(currency) || Number.isInteger(amount) ? 0 : 2

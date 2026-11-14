@@ -4,15 +4,15 @@ import { currencyLabel, formatMoney } from './currency'
 describe('money display', () => {
   it('puts letters in front of every dollar sign', () => {
     expect(formatMoney(60, 'USD', 'en')).toBe('US $ 60')
-    expect(formatMoney(70, 'AUD', 'en')).toBe('A $ 70')
-    expect(formatMoney(55, 'NZD', 'en')).toBe('N $ 55')
-    expect(formatMoney(80, 'CAD', 'en')).toBe('C $ 80')
-    expect(formatMoney(90, 'SGD', 'en')).toBe('S $ 90')
+    expect(formatMoney(70, 'AUD', 'en')).toBe('AU $ 70')
+    expect(formatMoney(55, 'NZD', 'en')).toBe('NZ $ 55')
+    expect(formatMoney(80, 'CAD', 'en')).toBe('CA $ 80')
+    expect(formatMoney(90, 'SGD', 'en')).toBe('SG $ 90')
   })
 
   it('uses a comma for decimals and a dot for thousands, in every language', () => {
     expect(formatMoney(534.48, 'USD', 'en')).toBe('US $ 534,48')
-    expect(formatMoney(510.09, 'AUD', 'id')).toBe('A $ 510,09')
+    expect(formatMoney(510.09, 'AUD', 'id')).toBe('AU $ 510,09')
     expect(formatMoney(1234.5, 'USD', 'en')).toBe('US $ 1.234,50')
     expect(formatMoney(416.25, 'EUR', 'en')).toBe('€ 416,25')
     expect(formatMoney(8000, 'JPY', 'en')).toBe('¥ 8.000')

@@ -8,6 +8,7 @@ import type { Client, WorkHours } from '../../db/types'
 import { useNow } from '../../hooks/useNow'
 import { utcOffset } from '../../lib/overlap'
 import { currencyLabel } from '../../lib/currency'
+import { COUNTRY_DIAL, countryForZone, countryOptions, joinPhone, splitPhone } from '../../lib/phone'
 import { cityOf, formatInZone, myTimezone } from '../../lib/time'
 import { DEFAULT_HOURS } from '../auth/auth'
 import { CLIENT_COLORS, CURRENCIES, NOTE_MAX, formatRate, normalizeWebsite, addProject, allTimezones, createClient, renameProject, setClientArchived, setProjectArchived, toInput, updateClient, validateClient, type ClientInput } from './actions'
@@ -79,6 +80,74 @@ export function ClientDialog({ open, client, onClose }: { open: boolean; client?
     <Modal open={open} onClose={onClose} title={client ? t('clients.form.editTitle', { name: client.name }) : t('clients.form.addTitle')} wide>
       <ClientForm key={client?.id ?? 'new'} client={client} onDone={onClose} />
     </Modal>
+  )
+}
+
+/**
+ * Country code picker plus the local number. The code follows the client's time zone until
+ * one is picked or a number is typed; typing a number that starts with "+" picks the code too.
+ */
+function PhoneField({ id, value, timezone, invalid, onChange }: { id: string; value: string; timezone: string; invalid: boolean; onChange: (v: string) => void }) {
+  const { t, i18n } = useTranslation()
+  const lang = i18n.resolvedLanguage ?? 'en'
+  const suggested = countryForZone(timezone, countryForZone(myTimezone()))
+  const [initial] = useState(() => splitPhone(value, suggested))
+  const [picked, setPicked] = useState<string | null>(value ? initial.country : null)
+  const [local, setLocal] = useState(initial.local)
+  const country = picked ?? suggested
+  const options = useMemo(() => countryOptions(lang), [lang])
+
+  const emit = (c: string, l: string) => onChange(joinPhone(c, l))
+  const onLocal = (l: string) => {
+    if (l.trim().startsWith('+')) {
+      const parts = splitPhone(l, country)
+      if (COUNTRY_DIAL[parts.country] && l.trim().length > COUNTRY_DIAL[parts.country].length) {
+        setPicked(parts.country)
+        setLocal(parts.local)
+        emit(parts.country, parts.local)
+        return
+      }
+    }
+    setLocal(l)
+    if (picked === null && l) setPicked(country)
+    emit(country, l)
+  }
+
+  return (
+    <div className={`flex min-h-11 w-full min-w-0 items-stretch rounded-[10px] border bg-white focus-within:border-accent ${invalid ? 'border-red-600' : 'border-line'}`}>
+      <label className="relative flex shrink-0 cursor-pointer items-center gap-1 rounded-l-[10px] border-r border-line bg-slate-50 pr-2 pl-3 text-[15px] font-semibold tabular-nums hover:bg-slate-100 has-focus-visible:outline-2 has-focus-visible:outline-accent">
+        <span aria-hidden="true" data-testid="phone-dial">
+          <span className="mr-1 text-xs font-bold text-muted">{country}</span>
+          {COUNTRY_DIAL[country]}
+        </span>
+        <Icon name="arrowDown" size={12} className="text-slate-500" />
+        <select
+          aria-label={t('clients.form.countryCode')}
+          value={country}
+          onChange={(e) => {
+            setPicked(e.target.value)
+            emit(e.target.value, local)
+          }}
+          className="absolute inset-0 cursor-pointer opacity-0"
+        >
+          {options.map((o) => (
+            <option key={o.iso} value={o.iso}>
+              {o.name} ({o.dial})
+            </option>
+          ))}
+        </select>
+      </label>
+      <input
+        id={id}
+        type="tel"
+        inputMode="tel"
+        value={local}
+        onChange={(e) => onLocal(e.target.value)}
+        autoComplete="off"
+        aria-invalid={invalid}
+        className="min-w-0 flex-1 rounded-r-[10px] border-none bg-transparent px-3 text-[15px] tabular-nums outline-none"
+      />
+    </div>
   )
 }
 
@@ -198,16 +267,12 @@ function ClientForm({ client, onDone }: { client?: Client; onDone: () => void })
             <label htmlFor={ids.phone} className={label}>
               {t('clients.form.contactPhone')}
             </label>
-            <input
+            <PhoneField
               id={ids.phone}
-              type="tel"
-              inputMode="tel"
               value={form.contactPhone ?? ''}
-              onChange={(e) => setForm({ ...form, contactPhone: e.target.value })}
-              placeholder="+62 812 3456 7890"
-              autoComplete="off"
-              aria-invalid={!!show('phone')}
-              className={`${field} tabular-nums ${show('phone') ? 'border-red-600' : ''}`}
+              timezone={form.timezone}
+              invalid={!!show('phone')}
+              onChange={(contactPhone) => setForm((f) => ({ ...f, contactPhone }))}
             />
             {show('phone') && <p className="m-0 text-[13px] text-red-700">{show('phone')}</p>}
           </div>
@@ -222,7 +287,6 @@ function ClientForm({ client, onDone }: { client?: Client; onDone: () => void })
               value={form.website ?? ''}
               onChange={(e) => setForm({ ...form, website: e.target.value })}
               onBlur={() => setForm((f) => ({ ...f, website: normalizeWebsite(f.website) }))}
-              placeholder="nordlicht.example"
               autoComplete="off"
               aria-invalid={!!show('website')}
               className={`${field} ${show('website') ? 'border-red-600' : ''}`}

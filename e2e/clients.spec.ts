@@ -38,7 +38,7 @@ test('shows each client with local time, status, overlap and best time to send',
 
   // Every dollar gets its letters; Rupiah is written the Indonesian way.
   await expect(ny).toContainText('Rate US $ 60 / h')
-  await expect(sydney).toContainText('Rate A $ 70 / h')
+  await expect(sydney).toContainText('Rate AU $ 70 / h')
   await expect(jakarta).toContainText('Rate Rp 250.000,- / h')
   await expect(berlin).toContainText('Rate € 45 / h')
 
@@ -73,7 +73,11 @@ test('adds a client, then edits, archives and restores it', async ({ page }) => 
   await dialog.getByLabel('Phone number').fill('call me')
   await dialog.getByRole('button', { name: 'Add client' }).click()
   await expect(dialog.getByText('Use digits, spaces and + ( ) - only, 6 to 30 characters.')).toBeVisible()
-  await dialog.getByLabel('Phone number').fill('+81 3-1234-5678')
+  // The country code follows the client's zone (Tokyo → +81); only the local number is typed.
+  await expect(dialog.getByTestId('phone-dial')).toHaveText('JP+81')
+  await expect(dialog.getByLabel('Phone number')).not.toHaveAttribute('placeholder')
+  await expect(dialog.getByLabel('Website')).not.toHaveAttribute('placeholder')
+  await dialog.getByLabel('Phone number').fill('03-1234-5678')
   await dialog.getByLabel('Website').fill('tokyo-ramen.example')
   await dialog.getByLabel('Website').blur()
   await expect(dialog.getByLabel('Website')).toHaveValue('https://tokyo-ramen.example')
@@ -95,7 +99,12 @@ test('adds a client, then edits, archives and restores it', async ({ page }) => 
 
   await row(page, 'Tokyo Ramen').getByRole('button', { name: 'Edit Tokyo Ramen' }).click()
   const edit = page.getByRole('dialog', { name: 'Edit Tokyo Ramen' })
-  await expect(edit.getByLabel('Phone number')).toHaveValue('+81 3-1234-5678')
+  await expect(edit.getByLabel('Country code')).toHaveValue('JP')
+  await expect(edit.getByLabel('Phone number')).toHaveValue('3-1234-5678')
+  // Picking another country keeps the number.
+  await edit.getByLabel('Country code').selectOption('SG')
+  await expect(edit.getByTestId('phone-dial')).toHaveText('SG+65')
+  await edit.getByLabel('Country code').selectOption('JP')
   await expect(edit.getByLabel('Website')).toHaveValue('https://tokyo-ramen.example')
   await expect(edit.getByLabel('Note')).toHaveValue('Invoices in JPY, monthly. Prefers LINE for quick questions.')
   await edit.getByPlaceholder('Add a project').fill('Menu app')
