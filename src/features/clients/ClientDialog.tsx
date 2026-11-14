@@ -206,7 +206,7 @@ function ClientForm({ client, onDone }: { client?: Client; onDone: () => void })
           <fieldset className="m-0 flex flex-col gap-1.5 border-0 p-0">
             <legend className={`${label} mb-1.5`}>{t('clients.form.color')}</legend>
             <div className="flex flex-wrap gap-1.5">
-              {CLIENT_COLORS.map((c) => (
+              {(CLIENT_COLORS.includes(form.color) ? CLIENT_COLORS : [form.color, ...CLIENT_COLORS]).map((c) => (
                 <label key={c} className="flex size-9 cursor-pointer items-center justify-center rounded-full has-focus-visible:outline-2 has-focus-visible:outline-accent">
                   <input type="radio" name="client-color" value={c} checked={form.color === c} onChange={() => setForm({ ...form, color: c })} className="sr-only" aria-label={c} />
                   <span className={`size-7 rounded-full ${form.color === c ? 'ring-2 ring-ink ring-offset-2' : ''}`} style={{ backgroundColor: c }} />

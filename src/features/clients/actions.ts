@@ -2,7 +2,7 @@ import { db } from '../../db/db'
 import type { Client, WorkHours } from '../../db/types'
 import { formatMoney } from '../../lib/currency'
 
-export const CLIENT_COLORS = ['#0E7490', '#C2410C', '#6D28D9', '#15803D', '#BE185D', '#1D4ED8', '#B45309', '#475569']
+export const CLIENT_COLORS = ['#0E7490', '#C2410C', '#6D28D9', '#15803D', '#BE185D', '#EAB308', '#F97316', '#65A30D'] // …yellow, orange, leaf green
 export const CURRENCIES = ['USD', 'EUR', 'GBP', 'AUD', 'CAD', 'SGD', 'JPY', 'IDR', 'MYR', 'INR', 'CHF', 'NZD']
 
 export interface ClientInput {

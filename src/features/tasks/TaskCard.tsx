@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next'
 import { Icon } from '../../components/Icon'
 import type { Client, Task } from '../../db/types'
 import { cityOf, formatInZone, formatMinutes, isWithinWorkHours, myTimezone, sameWallClock } from '../../lib/time'
+import { textShade } from '../../lib/color'
 
 export interface CardProps {
   task: Task
@@ -20,7 +21,7 @@ export function ClientChip({ client, className = '' }: { client?: Client; classN
   return (
     <span
       className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold whitespace-nowrap ${className}`}
-      style={{ color: client.color, backgroundColor: `${client.color}14` }}
+      style={{ color: textShade(client.color), backgroundColor: `${client.color}1f` }}
     >
       <span className="size-1.5 rounded-full" style={{ backgroundColor: client.color }} aria-hidden="true" />
       {client.name}

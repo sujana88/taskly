@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom'
 import { Icon } from '../../components/Icon'
 import { STATUSES, type Task } from '../../db/types'
 import { useNow } from '../../hooks/useNow'
+import { inkOn } from '../../lib/color'
 import { bestTimeToSend, clientStatus, dayOverlap, dayRange, formatSpan } from '../../lib/overlap'
 import { remaining, sessionNumber, durationMs } from '../../lib/pomodoro'
 import { buildWeekReport, msWithin } from '../../lib/report'
@@ -167,7 +168,7 @@ export function DashboardPage() {
               const ov = dayOverlap(me, c, now).overlapMs
               return (
                 <li key={c.id} className="flex items-center gap-3 rounded-2xl border border-line p-3.5">
-                  <span className="flex size-11 shrink-0 items-center justify-center rounded-xl text-sm font-extrabold text-white" style={{ backgroundColor: c.color }} aria-hidden="true">
+                  <span className="flex size-11 shrink-0 items-center justify-center rounded-xl text-sm font-extrabold" style={{ backgroundColor: c.color, color: inkOn(c.color) }} aria-hidden="true">
                     {c.name.slice(0, 1)}
                   </span>
                   <div className="flex min-w-0 flex-1 flex-col">

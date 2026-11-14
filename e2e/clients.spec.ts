@@ -64,6 +64,7 @@ test('adds a client, then edits, archives and restores it', async ({ page }) => 
   await expect(dialog.getByText('Enter a name.')).toBeVisible()
 
   await dialog.getByLabel('Client name').fill('Tokyo Ramen')
+  await dialog.getByRole('radio', { name: '#EAB308' }).check({ force: true })
   await dialog.getByLabel('Time zone').selectOption('Asia/Tokyo')
   await expect(dialog).toContainText('Working hours in Tokyo')
   await dialog.getByLabel('Hourly rate').fill('8000')
@@ -89,6 +90,7 @@ test('adds a client, then edits, archives and restores it', async ({ page }) => 
 
   const tokyo = row(page, 'Tokyo Ramen')
   await expect(tokyo).toContainText('Tokyo · UTC+9')
+  await expect(tokyo.locator('span.rounded-full').first()).toHaveCSS('background-color', 'rgb(234, 179, 8)')
   await expect(tokyo.getByTestId('overlap-summary')).toHaveText('6h overlap · client hours 07:00–15:00 your time')
   await expect(tokyo).toContainText('Rate ¥ 8.000 / h')
 
