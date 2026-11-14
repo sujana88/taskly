@@ -4,8 +4,26 @@
     {
       "name": "overlap-dev",
       "runtimeExecutable": "node",
-      "runtimeArgs": ["node_modules/vite/bin/vite.js", "--port", "5173", "--strictPort"],
+      "runtimeArgs": [
+        "node_modules/vite/bin/vite.js",
+        "--port",
+        "5173",
+        "--strictPort"
+      ],
       "port": 5173
+    },
+    {
+      "name": "overlap-local",
+      "runtimeExecutable": "node",
+      "runtimeArgs": [
+        "node_modules/vite/bin/vite.js",
+        "--mode",
+        "e2e",
+        "--port",
+        "5174",
+        "--strictPort"
+      ],
+      "port": 5174
     }
   ]
 }

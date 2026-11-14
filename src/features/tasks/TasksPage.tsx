@@ -4,16 +4,18 @@ import { useSearchParams } from 'react-router-dom'
 import { Icon } from '../../components/Icon'
 import type { Client } from '../../db/types'
 import { useNow } from '../../hooks/useNow'
+import { monthKeyOf, moveDueToDay, parseMonthKey } from '../../lib/calendar'
 import { SORT_KEYS, filterTasks, sortTasks, type SortDir, type SortKey } from '../../lib/filter'
-import { cityOf, formatInZone, isWithinWorkHours } from '../../lib/time'
+import { cityOf, formatInZone, isWithinWorkHours, myTimezone } from '../../lib/time'
 import { useRunningEntry } from '../timer/useRunningEntry'
-import { createTask } from './actions'
+import { createTask, updateTask } from './actions'
 import { Board } from './Board'
+import { CalendarView } from './CalendarView'
 import { ListView } from './ListView'
 import { TaskDrawer } from './TaskDrawer'
 import { useTaskData } from './useTaskData'
 
-type View = 'kanban' | 'list'
+type View = 'kanban' | 'list' | 'calendar'
 
 export function TasksPage() {
   const { t } = useTranslation()
@@ -23,7 +25,10 @@ export function TasksPage() {
   const [params, setParams] = useSearchParams()
   const [justCreated, setJustCreated] = useState<string | null>(null)
 
-  const view: View = params.get('view') === 'list' ? 'list' : 'kanban'
+  const viewParam = params.get('view')
+  const view: View = viewParam === 'list' || viewParam === 'calendar' ? viewParam : 'kanban'
+  const monthParam = params.get('month')
+  const month = parseMonthKey(monthParam) ? monthParam! : monthKeyOf(now, myTimezone())
   const q = params.get('q') ?? ''
   const clientId = params.get('client')
   const sortParam = params.get('sort') as SortKey | null
@@ -74,6 +79,15 @@ export function TasksPage() {
     update({ task: id }, false)
   }
 
+  /** From the calendar: a new task already due on that day (17:00 my time). */
+  const addTaskOn = async (dayKey: string) => {
+    if (!defaultProjectId) return
+    const id = await createTask({ title: t('newTaskTitle'), status: 'todo', projectId: defaultProjectId })
+    await updateTask(id, { dueAt: moveDueToDay(undefined, dayKey, myTimezone()) })
+    setJustCreated(id)
+    update({ task: id }, false)
+  }
+
   const onSort = (key: SortKey) => update({ sort: key, dir: sort === key && dir === 'asc' ? 'desc' : 'asc' })
   const filtersActive = q !== '' || clientId !== null
 
@@ -94,15 +108,15 @@ export function TasksPage() {
 
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line pb-4">
         <div role="group" aria-label={t('view.label')} className="flex gap-1 rounded-xl bg-slate-100 p-1">
-          <button type="button" aria-pressed={view === 'kanban'} onClick={() => update({ view: null })} className={segBtn(view === 'kanban')}>
+          <button type="button" aria-pressed={view === 'kanban'} onClick={() => update({ view: null, month: null })} className={segBtn(view === 'kanban')}>
             <Icon name="kanban" />
             {t('view.kanban')}
           </button>
-          <button type="button" aria-pressed={view === 'list'} onClick={() => update({ view: 'list' })} className={segBtn(view === 'list')}>
+          <button type="button" aria-pressed={view === 'list'} onClick={() => update({ view: 'list', month: null })} className={segBtn(view === 'list')}>
             <Icon name="list" />
             {t('view.list')}
           </button>
-          <button type="button" disabled title={t('view.calendarSoon')} className="flex min-h-10 cursor-not-allowed items-center gap-2 rounded-[9px] px-4 text-sm font-medium text-slate-500">
+          <button type="button" aria-pressed={view === 'calendar'} onClick={() => update({ view: 'calendar' })} className={segBtn(view === 'calendar')}>
             <Icon name="calendar" />
             {t('view.calendar')}
           </button>
@@ -162,6 +176,8 @@ export function TasksPage() {
         </div>
       ) : view === 'kanban' ? (
         <Board data={data} tasks={filtered} now={now} onOpen={open} defaultProjectId={defaultProjectId} trackingId={running?.taskId} />
+      ) : view === 'calendar' ? (
+        <CalendarView data={data} tasks={filtered} now={now} month={month} onMonth={(m) => update({ month: m })} onOpen={open} onAddOn={addTaskOn} />
       ) : (
         <ListView data={data} tasks={listed} now={now} sort={sort} dir={dir} onSort={onSort} onOpen={open} />
       )}
