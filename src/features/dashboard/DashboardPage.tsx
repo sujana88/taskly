@@ -96,7 +96,7 @@ export function DashboardPage() {
           </div>
         </section>
 
-        <FocusWidget now={now} />
+        <FocusWidget />
 
         {/* My day */}
         <Card title={t('dash.myDay')} className="xl:col-span-4" action={<Link to="/tasks" className="text-xs font-semibold text-accent no-underline hover:underline">{t('dash.all')}</Link>}>
@@ -264,8 +264,10 @@ function UpcomingRow({ task, now, tz, lang, client }: { task: Task; now: number;
 }
 
 /** The Pomodoro, one click away: a dark card with a blue progress ring. */
-function FocusWidget({ now }: { now: number }) {
+function FocusWidget() {
   const { t } = useTranslation()
+  // Its own one-second clock: the rest of the dashboard only refreshes every 30 seconds.
+  const now = useNow(1000)
   const data = useTaskData()
   const { state, settings, taskId } = usePomodoro()
   const left = remaining(state, now)

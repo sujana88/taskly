@@ -33,6 +33,9 @@ test('the focus widget starts the Pomodoro from the dashboard', async ({ page })
   await page.getByRole('button', { name: 'Start', exact: true }).click()
   await expect(page.getByRole('button', { name: 'Pause', exact: true }).first()).toBeVisible()
   await expect(page.getByTestId('timer-bar')).toContainText('Focus')
+  // The widget counts down every second, in step with the timer bar.
+  await expect(page.getByTestId('widget-clock')).toHaveText(/^24:5[0-8]$/, { timeout: 5000 })
+  await expect(page.getByTestId('widget-clock')).not.toHaveText(await page.getByTestId('widget-clock').innerText(), { timeout: 3000 })
 })
 
 test('links lead to tasks, reports and clients', async ({ page }) => {
