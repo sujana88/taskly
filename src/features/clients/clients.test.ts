@@ -47,8 +47,8 @@ describe('client actions', () => {
   })
 
   it('formats rates per currency', () => {
-    expect(formatRate(45, 'EUR', 'en')).toBe('€45')
-    expect(formatRate(250000, 'IDR', 'id')).toMatch(/^Rp\s?250\.000$/)
+    expect(formatRate(45, 'EUR', 'en')).toBe('€ 45')
+    expect(formatRate(250000, 'IDR', 'id')).toBe('Rp 250.000,-')
   })
 })
 

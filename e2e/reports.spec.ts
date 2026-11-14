@@ -25,8 +25,8 @@ test('summarises the week with tiles, charts and a timesheet', async ({ page }) 
 
   const rows = page.getByTestId('timesheet').locator('tbody tr')
   await expect(rows).toHaveCount(4)
-  await expect(rows.nth(0)).toContainText('Nordlicht Studio9h 15m€45€416.25')
-  await expect(rows.nth(3)).toContainText('Warung Rasa2h 40mRp 250.000Rp 666.667')
+  await expect(rows.nth(0)).toContainText('Nordlicht Studio9h 15m€ 45€ 416,25')
+  await expect(rows.nth(3)).toContainText('Warung Rasa2h 40mRp 250.000,-Rp 666.667,-')
   await page.screenshot({ path: `${shots}/18-reports.png`, fullPage: true })
 
   // Last week has no data; the next-week button is off for the current week.
@@ -51,7 +51,7 @@ test('exports the timesheet as CSV and opens a printable PDF', async ({ page }) 
   const [popup] = await Promise.all([page.waitForEvent('popup'), page.getByRole('button', { name: 'Timesheet PDF for Nordlicht Studio' }).click()])
   await expect(popup.getByRole('heading', { name: 'Timesheet · Nordlicht Studio' })).toBeVisible()
   await expect(popup.locator('tfoot')).toContainText('9h 15m')
-  await expect(popup.locator('tfoot')).toContainText('€416.25')
+  await expect(popup.locator('tfoot')).toContainText('€ 416,25')
 })
 
 test('drafts a progress update with the best time to send', async ({ page, context }) => {

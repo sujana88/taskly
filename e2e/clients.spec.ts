@@ -37,10 +37,10 @@ test('shows each client with local time, status, overlap and best time to send',
   await expect(jakarta.getByTestId('best-time')).toHaveText('Now · same time zone')
 
   // Every dollar gets its letters; Rupiah is written the Indonesian way.
-  await expect(ny).toContainText('Rate US $60 / h')
-  await expect(sydney).toContainText('Rate A $70 / h')
-  await expect(jakarta).toContainText('Rate Rp 250.000 / h')
-  await expect(berlin).toContainText('Rate €45 / h')
+  await expect(ny).toContainText('Rate US $ 60 / h')
+  await expect(sydney).toContainText('Rate A $ 70 / h')
+  await expect(jakarta).toContainText('Rate Rp 250.000,- / h')
+  await expect(berlin).toContainText('Rate € 45 / h')
 
   await expect(
     page.getByText('Daylight saving is handled per city: New York changes to UTC−4 on 14 Mar; Berlin changes to UTC+2 on 28 Mar; Sydney changes to UTC+10 on 4 Apr.'),
@@ -86,7 +86,7 @@ test('adds a client, then edits, archives and restores it', async ({ page }) => 
   const tokyo = row(page, 'Tokyo Ramen')
   await expect(tokyo).toContainText('Tokyo · UTC+9')
   await expect(tokyo.getByTestId('overlap-summary')).toHaveText('6h overlap · client hours 07:00–15:00 your time')
-  await expect(tokyo).toContainText('Rate ¥8,000 / h')
+  await expect(tokyo).toContainText('Rate ¥ 8.000 / h')
 
   // The new client is available for tasks right away.
   await page.goto('/#/tasks')
