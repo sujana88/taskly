@@ -6,7 +6,7 @@ import { STATUSES, type Task } from '../../db/types'
 import { useNow } from '../../hooks/useNow'
 import { bestTimeToSend, clientStatus, dayOverlap, dayRange, formatSpan } from '../../lib/overlap'
 import { remaining, sessionNumber, durationMs } from '../../lib/pomodoro'
-import { buildWeekReport, msWithin, weekRange } from '../../lib/report'
+import { buildWeekReport, msWithin } from '../../lib/report'
 import { cityOf, formatClock, formatInZone } from '../../lib/time'
 import { useCurrentUser, useMyHours } from '../auth/useCurrentUser'
 import { WeekBars } from '../reports/WeekBars'
@@ -23,6 +23,8 @@ const STATUS_TILE: Record<string, string> = {
   in_revision: 'bg-amber-50 text-amber-800',
   done: 'bg-green-50 text-green-800',
 }
+
+const DUE_SOON_DAYS = 3
 
 export function DashboardPage() {
   const { t, i18n } = useTranslation()
@@ -43,8 +45,9 @@ export function DashboardPage() {
   const todayMs = week.days.find((d) => now >= d.day.start && now < d.day.end)?.ms ?? 0
 
   const open = data.tasks.filter((x) => x.status !== 'done')
-  const weekEnd = weekRange(me.timezone, now).end
-  const dueThisWeek = open.filter((x) => x.dueAt && Date.parse(x.dueAt) < weekEnd).length
+  // "These 3 days": the rest of today and the next two days, in my zone (overdue ones are counted apart).
+  const soonEnd = dayRange(me.timezone, now, DUE_SOON_DAYS - 1).end
+  const dueSoon = open.filter((x) => x.dueAt && Date.parse(x.dueAt) >= now && Date.parse(x.dueAt) < soonEnd).length
   const overdue = open.filter((x) => x.dueAt && Date.parse(x.dueAt) < now).length
   const counts = Object.fromEntries(STATUSES.map((s) => [s, data.tasks.filter((x) => x.status === s).length])) as Record<string, number>
   const doneShare = data.tasks.length ? counts.done / data.tasks.length : 0
@@ -67,7 +70,7 @@ export function DashboardPage() {
                 {t(`dash.greeting.${greeting}`, { name: firstName })}
               </h1>
               <p className="m-0 text-[15px] text-blue-50" data-testid="hero-summary">
-                {t('dash.summary', { count: dueThisWeek, progress: counts.in_progress })}
+                {t('dash.summary', { due: t('dash.dueSoon', { count: dueSoon, days: DUE_SOON_DAYS }), progress: t('dash.inProgress', { count: counts.in_progress }) })}
                 {overdue > 0 && <> {t('dash.overdue', { count: overdue })}</>}
               </p>
               <div className="mt-3 flex flex-wrap gap-2.5">

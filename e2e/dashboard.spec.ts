@@ -12,7 +12,7 @@ test.beforeEach(async ({ page }) => {
 
 test('the dashboard greets the user and summarises the week', async ({ page }) => {
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('Good afternoon, Demo')
-  await expect(page.getByTestId('hero-summary')).toHaveText('1 task is due this week and 2 are in progress.')
+  await expect(page.getByTestId('hero-summary')).toHaveText('1 task must be completed within these 3 days and 2 tasks are currently in progress.')
   await expect(page.getByRole('link', { name: 'Dashboard' })).toHaveAttribute('aria-current', 'page')
 
   const upcoming = page.getByTestId('upcoming').getByRole('listitem')

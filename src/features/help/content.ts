@@ -40,7 +40,7 @@ const en: HelpContent = {
       title: 'Dashboard',
       summary: 'Your day at a glance.',
       points: [
-        'The blue card shows how many tasks are due this week and how much time you tracked today and this week.',
+        'The blue card shows how many tasks must be completed within the next 3 days (today included), how many are in progress, and how much time you tracked today and this week.',
         'Upcoming deadlines lists the nearest open tasks. Tick the box to mark one as done.',
         'The focus timer starts or pauses a Pomodoro without leaving the page.',
         'Clients right now shows each client\'s local time, whether they are working, and today\'s overlap.',
@@ -153,7 +153,7 @@ const id: HelpContent = {
       title: 'Dasbor',
       summary: 'Ringkasan hari Anda dalam satu layar.',
       points: [
-        'Kartu biru menampilkan jumlah tugas yang jatuh tempo minggu ini dan waktu yang tercatat hari ini serta minggu ini.',
+        'Kartu biru menampilkan jumlah tugas yang harus selesai dalam 3 hari ini (termasuk hari ini), tugas yang sedang dikerjakan, dan waktu yang tercatat hari ini serta minggu ini.',
         'Tenggat terdekat menampilkan tugas terbuka yang paling dekat. Centang kotaknya untuk menandai selesai.',
         'Timer fokus memulai atau menjeda Pomodoro tanpa pindah halaman.',
         'Klien saat ini menampilkan jam lokal tiap klien, apakah mereka sedang bekerja, dan overlap hari ini.',
