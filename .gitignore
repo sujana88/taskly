@@ -2,3 +2,6 @@ node_modules
 dist
 test-results
 playwright-report
+
+# Screenshots written by every e2e run (npm run e2e); kept locally only.
+e2e-screenshots/
