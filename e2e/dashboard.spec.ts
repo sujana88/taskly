@@ -12,7 +12,7 @@ test.beforeEach(async ({ page }) => {
 
 test('the dashboard greets the user and summarises the week', async ({ page }) => {
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('Good afternoon, Demo')
-  await expect(page.getByTestId('hero-summary')).toHaveText('1 task must be completed within these 3 days and 2 tasks are currently in progress.')
+  await expect(page.getByTestId('hero-summary')).toHaveText('There is 1 task that must be completed within these 3 days. 3 tasks are in the to-do state, 2 tasks are under revision and 2 tasks are currently in progress.')
   await expect(page.getByRole('link', { name: 'Dashboard' })).toHaveAttribute('aria-current', 'page')
 
   const upcoming = page.getByTestId('upcoming').getByRole('listitem')
@@ -59,4 +59,11 @@ test('the focus widget says which phase is running, also during a break', async 
   await expect(page.getByText('Step away from the screen for a moment.')).toBeVisible()
   await expect(page.getByTestId('timer-bar')).toContainText('Short break')
   await page.getByRole('region', { name: 'Focus timer' }).screenshot({ path: 'e2e-screenshots/31-focus-widget-break.png' })
+})
+
+test('the summary reads naturally in Indonesian', async ({ page }) => {
+  await page.getByRole('button', { name: 'ID', exact: true }).click()
+  await expect(page.getByTestId('hero-summary')).toHaveText(
+    'Terdapat 1 tugas yang harus diselesaikan dalam kurun waktu 3 hari ini. 3 tugas berstatus belum dikerjakan, 2 tugas sedang dalam tahap revisi, dan 2 tugas sedang dalam proses pengerjaan.',
+  )
 })

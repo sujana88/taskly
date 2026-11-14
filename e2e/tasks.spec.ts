@@ -110,7 +110,8 @@ test('list view sorts by column header', async ({ page }) => {
 test('switches the interface to Indonesian', async ({ page }) => {
   await page.getByRole('button', { name: 'ID', exact: true }).click()
   await expect(page.getByRole('heading', { name: 'Tugas', level: 1 })).toBeVisible()
-  await expect(page.getByRole('heading', { name: 'Dikerjakan' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Dikerjakan', exact: true })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Yang belum dikerjakan' })).toBeVisible()
   await page.screenshot({ path: `${shots}/06-indonesian.png` })
   await page.reload()
   await expect(page.getByRole('heading', { name: 'Tugas', level: 1 })).toBeVisible()

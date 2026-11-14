@@ -26,6 +26,12 @@ const STATUS_TILE: Record<string, string> = {
 
 const DUE_SOON_DAYS = 3
 
+/** "a", "a and b", "a, b and c" (Indonesian passes ", dan " for "a, b, dan c"). Capitalises the first letter. */
+function joinList(parts: string[], and: string): string {
+  const text = parts.length < 3 ? parts.join(and.replace(/^,/, '')) : `${parts.slice(0, -1).join(', ')}${and}${parts[parts.length - 1]}`
+  return text.charAt(0).toUpperCase() + text.slice(1)
+}
+
 export function DashboardPage() {
   const { t, i18n } = useTranslation()
   const lang = i18n.resolvedLanguage ?? 'en'
@@ -50,6 +56,13 @@ export function DashboardPage() {
   const dueSoon = open.filter((x) => x.dueAt && Date.parse(x.dueAt) >= now && Date.parse(x.dueAt) < soonEnd).length
   const overdue = open.filter((x) => x.dueAt && Date.parse(x.dueAt) < now).length
   const counts = Object.fromEntries(STATUSES.map((s) => [s, data.tasks.filter((x) => x.status === s).length])) as Record<string, number>
+  // "1 task is in the to-do state, 1 task is under revision and 4 tasks are currently in progress." Zero counts are left out.
+  const statusParts = [
+    counts.todo ? t('dash.todoCount', { count: counts.todo }) : '',
+    counts.in_revision ? t('dash.revisionCount', { count: counts.in_revision }) : '',
+    counts.in_progress ? t('dash.progressCount', { count: counts.in_progress }) : '',
+  ].filter(Boolean)
+  const statusLine = statusParts.length ? `${joinList(statusParts, t('dash.and'))}.` : ''
   const doneShare = data.tasks.length ? counts.done / data.tasks.length : 0
 
   const upcoming = [...open].sort((a, b) => (a.dueAt ?? '9').localeCompare(b.dueAt ?? '9')).slice(0, 6)
@@ -70,7 +83,8 @@ export function DashboardPage() {
                 {t(`dash.greeting.${greeting}`, { name: firstName })}
               </h1>
               <p className="m-0 text-[15px] text-blue-50" data-testid="hero-summary">
-                {t('dash.summary', { due: t('dash.dueSoon', { count: dueSoon, days: DUE_SOON_DAYS }), progress: t('dash.inProgress', { count: counts.in_progress }) })}
+                {t('dash.dueSoon', { count: dueSoon, days: DUE_SOON_DAYS })}
+                {statusLine && <> {statusLine}</>}
                 {overdue > 0 && <> {t('dash.overdue', { count: overdue })}</>}
               </p>
               <div className="mt-3 flex flex-wrap gap-2.5">

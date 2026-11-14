@@ -163,7 +163,7 @@ const id: HelpContent = {
       title: 'Tugas',
       summary: 'Rencanakan pekerjaan di papan Kanban atau daftar.',
       points: [
-        'Seret kartu antara To-do, Dikerjakan, Revisi, dan Selesai. Dengan keyboard: Spasi untuk mengangkat, panah untuk memindah, Spasi untuk meletakkan.',
+        'Seret kartu antara Yang belum dikerjakan, Dikerjakan, Revisi, dan Selesai. Dengan keyboard: Spasi untuk mengangkat, panah untuk memindah, Spasi untuk meletakkan.',
         'Klik kartu (atau tekan Enter) untuk membukanya: judul, tenggat, tag, subtugas, catatan, dan pencatatan waktu.',
         'Pencarian dan filter klien menyaring papan; keduanya tersimpan di alamat halaman, jadi tampilannya bisa di-bookmark.',
         'Tampilan Daftar bisa diurutkan menurut tenggat, judul, status, klien, atau tanggal dibuat. Klik judul kolom untuk mengurutkan.',
@@ -210,7 +210,7 @@ const id: HelpContent = {
     { term: 'Jam kerja', meaning: 'Jam mulai, jam selesai, dan hari kerja Anda atau klien, dalam zona waktu masing-masing.' },
     { term: 'Waktu terbaik mengirim', meaning: 'Saat pesan tiba ketika klien sedang bekerja, sehingga lebih cepat dibaca.' },
     { term: 'Kanban', meaning: 'Papan dengan satu kolom per status. Memindah kartu memperlihatkan kemajuan sekilas.' },
-    { term: 'To-do / Dikerjakan / Revisi / Selesai', meaning: 'Belum dimulai / sedang dikerjakan / ada permintaan perubahan dari klien / sudah selesai.' },
+    { term: 'Yang belum dikerjakan / Dikerjakan / Revisi / Selesai', meaning: 'Belum dimulai / sedang dikerjakan / ada permintaan perubahan dari klien / sudah selesai.' },
     { term: 'Subtugas', meaning: 'Langkah kecil di dalam tugas. Bar di kartu menunjukkan berapa yang sudah selesai.' },
     { term: 'Tag', meaning: 'Label singkat seperti "UI" atau "Urgent" untuk mengelompokkan tugas. "Urgent" tampil merah.' },
     { term: 'Terlambat', meaning: 'Tenggat sudah lewat dan tugas belum selesai.' },
