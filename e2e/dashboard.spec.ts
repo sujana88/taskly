@@ -30,9 +30,11 @@ test('the dashboard greets the user and summarises the week', async ({ page }) =
 
 test('the focus widget starts the Pomodoro from the dashboard', async ({ page }) => {
   await expect(page.getByTestId('widget-clock')).toHaveText('25:00')
+  await expect(page.getByTestId('widget-phase')).toHaveText('Focus · Ready')
   await page.getByRole('button', { name: 'Start', exact: true }).click()
   await expect(page.getByRole('button', { name: 'Pause', exact: true }).first()).toBeVisible()
   await expect(page.getByTestId('timer-bar')).toContainText('Focus')
+  await expect(page.getByTestId('widget-phase')).toHaveText('Focus · Running')
   // The widget counts down every second, in step with the timer bar.
   await expect(page.getByTestId('widget-clock')).toHaveText(/^24:5[0-8]$/, { timeout: 5000 })
   await expect(page.getByTestId('widget-clock')).not.toHaveText(await page.getByTestId('widget-clock').innerText(), { timeout: 3000 })
@@ -44,4 +46,17 @@ test('links lead to tasks, reports and clients', async ({ page }) => {
   await page.goto('/#/')
   await page.getByRole('link', { name: 'Report', exact: true }).click()
   await expect(page.getByRole('heading', { name: 'Weekly report' })).toBeVisible()
+})
+
+test('the focus widget says which phase is running, also during a break', async ({ page }) => {
+  await page.goto('/#/focus')
+  await page.getByRole('button', { name: 'Skip' }).first().click()
+  await page.goto('/#/')
+  await expect(page.getByTestId('widget-phase')).toHaveText('Short break · Ready')
+  await expect(page.getByTestId('widget-clock')).toHaveText('05:00')
+  await page.getByRole('button', { name: 'Start', exact: true }).click()
+  await expect(page.getByTestId('widget-phase')).toHaveText('Short break · Running')
+  await expect(page.getByText('Step away from the screen for a moment.')).toBeVisible()
+  await expect(page.getByTestId('timer-bar')).toContainText('Short break')
+  await page.getByRole('region', { name: 'Focus timer' }).screenshot({ path: 'e2e-screenshots/31-focus-widget-break.png' })
 })

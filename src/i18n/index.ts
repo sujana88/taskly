@@ -55,6 +55,7 @@ const en = {
   dash: {
     greeting: { morning: 'Good morning, {{name}}', afternoon: 'Good afternoon, {{name}}', late: 'Good afternoon, {{name}}', evening: 'Good evening, {{name}}', night: 'Working late, {{name}}?' },
     summary: '{{due}} and {{progress}}.',
+    widget: { running: 'Running', ready: 'Ready', break: 'Break', breakHint: 'Step away from the screen for a moment.', breakNext: 'Take a breather. Up next: {{task}}' },
     dueSoon_zero: 'No tasks are due within these {{days}} days',
     dueSoon_one: '{{count}} task must be completed within these {{days}} days',
     dueSoon_other: '{{count}} tasks must be completed within these {{days}} days',
@@ -497,6 +498,7 @@ const id: Dict = {
   dash: {
     greeting: { morning: 'Selamat pagi, {{name}}', afternoon: 'Selamat siang, {{name}}', late: 'Selamat sore, {{name}}', evening: 'Selamat malam, {{name}}', night: 'Lembur malam ini, {{name}}?' },
     summary: '{{due}} dan {{progress}}.',
+    widget: { running: 'Berjalan', ready: 'Siap', break: 'Istirahat', breakHint: 'Jauhkan mata dari layar sejenak.', breakNext: 'Tarik napas sejenak. Berikutnya: {{task}}' },
     dueSoon_zero: 'Tidak ada tugas yang jatuh tempo dalam {{days}} hari ini',
     dueSoon_one: '{{count}} tugas harus selesai dalam {{days}} hari ini',
     dueSoon_other: '{{count}} tugas harus selesai dalam {{days}} hari ini',

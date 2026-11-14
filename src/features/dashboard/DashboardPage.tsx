@@ -267,6 +267,13 @@ function UpcomingRow({ task, now, tz, lang, client }: { task: Task; now: number;
 }
 
 /** The Pomodoro, one click away: a dark card with a blue progress ring. */
+/** Colours per Pomodoro phase on the dark card: text, ring and dot. */
+const PHASE_LOOK = {
+  focus: { text: 'text-blue-300', ring: 'stroke-blue-400', chip: 'bg-blue-400/15' },
+  short: { text: 'text-emerald-300', ring: 'stroke-emerald-400', chip: 'bg-emerald-400/15' },
+  long: { text: 'text-sky-300', ring: 'stroke-sky-400', chip: 'bg-sky-400/15' },
+} as const
+
 function FocusWidget() {
   const { t } = useTranslation()
   // Its own one-second clock: the rest of the dashboard only refreshes every 30 seconds.
@@ -277,32 +284,47 @@ function FocusWidget() {
   const total = durationMs(state.phase, settings)
   const task = taskId ? data.tasks.find((x) => x.id === taskId) : undefined
   const running = state.status === 'running'
+  const look = PHASE_LOOK[state.phase]
+  const onBreak = state.phase !== 'focus'
+  const phaseName = t(`focus.phase.${state.phase}`)
+  const stateName = running ? t('dash.widget.running') : state.status === 'paused' ? t('focus.paused') : t('dash.widget.ready')
   const r = 52
   const c = 2 * Math.PI * r
 
   return (
     <section className="relative flex flex-col justify-between gap-4 overflow-hidden rounded-[28px] bg-slate-900 p-6 text-white xl:col-span-4" aria-labelledby="focus-w-h">
       <div className="pointer-events-none absolute -right-12 -bottom-12 size-48 rounded-full bg-accent/30 blur-2xl" aria-hidden="true" />
-      <div className="relative flex items-center justify-between">
+      <div className="relative flex flex-wrap items-center justify-between gap-2">
         <h2 id="focus-w-h" className="m-0 text-[15px] font-bold">
           {t('dash.focusTimer')}
         </h2>
-        <span className="rounded-full bg-white/10 px-2.5 py-1 text-[11px] font-semibold text-blue-200">
-          {t(`focus.phase.${state.phase}`)} · {t('focus.session', { n: sessionNumber(state, settings), total: settings.longEvery })}
+        <span className="rounded-full bg-white/10 px-2.5 py-1 text-[11px] font-semibold text-slate-300">
+          {t('focus.session', { n: sessionNumber(state, settings), total: settings.longEvery })}
         </span>
       </div>
       <div className="relative flex items-center gap-5">
         <div className="relative size-[124px] shrink-0">
           <svg viewBox="0 0 124 124" className="size-full -rotate-90" aria-hidden="true">
             <circle cx="62" cy="62" r={r} fill="none" strokeWidth="8" className="stroke-white/10" />
-            <circle cx="62" cy="62" r={r} fill="none" strokeWidth="8" strokeLinecap="round" strokeDasharray={c} strokeDashoffset={c * (left / total)} className="stroke-blue-400 transition-[stroke-dashoffset] duration-1000 ease-linear" />
+            <circle cx="62" cy="62" r={r} fill="none" strokeWidth="8" strokeLinecap="round" strokeDasharray={c} strokeDashoffset={c * (left / total)} className={`${look.ring} transition-[stroke-dashoffset] duration-1000 ease-linear`} />
           </svg>
-          <span className="absolute inset-0 flex items-center justify-center text-[28px] font-extrabold tracking-tight tabular-nums" role="timer" data-testid="widget-clock">
-            {formatClock(left, 'up')}
-          </span>
+          <div className="absolute inset-0 flex flex-col items-center justify-center">
+            <span className="text-[28px] leading-none font-extrabold tracking-tight tabular-nums" role="timer" aria-label={`${phaseName}, ${formatClock(left, 'up')}`} data-testid="widget-clock">
+              {formatClock(left, 'up')}
+            </span>
+            <span className={`mt-1.5 text-[10px] font-bold tracking-wider uppercase ${look.text}`} aria-hidden="true">
+              {onBreak ? t('dash.widget.break') : t('focus.phase.focus')}
+            </span>
+          </div>
         </div>
         <div className="flex min-w-0 flex-col gap-3">
-          <span className="line-clamp-2 text-sm text-slate-300">{task ? task.title : t('focus.noTaskHint')}</span>
+          <span className={`inline-flex items-center gap-1.5 self-start rounded-full px-2.5 py-1 text-[10px] font-bold whitespace-nowrap uppercase ${look.chip} ${look.text}`} data-testid="widget-phase">
+            <span className={`size-1.5 rounded-full bg-current ${running ? 'animate-pulse' : 'opacity-50'}`} aria-hidden="true" />
+            {phaseName} · {stateName}
+          </span>
+          <span className="line-clamp-2 text-sm text-slate-300">
+            {onBreak ? (task ? t('dash.widget.breakNext', { task: task.title }) : t('dash.widget.breakHint')) : task ? task.title : t('focus.noTaskHint')}
+          </span>
           <div className="flex gap-2">
             <button
               type="button"
