@@ -56,6 +56,8 @@ export interface Task {
   subtasks: Subtask[]
   createdAt: string
   completedAt?: string
+  /** Set when a finished task is archived by hand: it leaves the board, list and calendar. */
+  archivedAt?: string
 }
 
 /**

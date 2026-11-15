@@ -9,13 +9,14 @@ import { SORT_KEYS, filterTasks, sortTasks, type SortDir, type SortKey } from '.
 import { cityOf, formatInZone, isWithinWorkHours, myTimezone } from '../../lib/time'
 import { useRunningEntry } from '../timer/useRunningEntry'
 import { createTask, updateTask } from './actions'
+import { ArchiveView } from './ArchiveView'
 import { Board } from './Board'
 import { CalendarView } from './CalendarView'
 import { ListView } from './ListView'
 import { TaskDrawer } from './TaskDrawer'
 import { useTaskData } from './useTaskData'
 
-type View = 'kanban' | 'list' | 'calendar'
+type View = 'kanban' | 'list' | 'calendar' | 'archive'
 
 export function TasksPage() {
   const { t } = useTranslation()
@@ -26,7 +27,7 @@ export function TasksPage() {
   const [justCreated, setJustCreated] = useState<string | null>(null)
 
   const viewParam = params.get('view')
-  const view: View = viewParam === 'list' || viewParam === 'calendar' ? viewParam : 'kanban'
+  const view: View = viewParam === 'list' || viewParam === 'calendar' || viewParam === 'archive' ? viewParam : 'kanban'
   const monthParam = params.get('month')
   const month = parseMonthKey(monthParam) ? monthParam! : monthKeyOf(now, myTimezone())
   const q = params.get('q') ?? ''
@@ -55,9 +56,12 @@ export function TasksPage() {
     [setParams],
   )
 
+  // Archived tasks only appear in the Archive view; the other views show the rest.
+  const active = useMemo(() => data.tasks.filter((x) => !x.archivedAt), [data.tasks])
+  const archived = useMemo(() => data.tasks.filter((x) => !!x.archivedAt), [data.tasks])
   const filtered = useMemo(
-    () => filterTasks(data.tasks, { q, clientId }, data.projectsById, data.clientsById),
-    [data, q, clientId],
+    () => filterTasks(view === 'archive' ? archived : active, { q, clientId }, data.projectsById, data.clientsById),
+    [view, active, archived, data, q, clientId],
   )
   const listed = useMemo(() => sortTasks(filtered, sort, dir, (x) => data.clientFor(x)?.name ?? ''), [filtered, sort, dir, data])
 
@@ -92,7 +96,7 @@ export function TasksPage() {
   const filtersActive = q !== '' || clientId !== null
 
   const segBtn = (active: boolean) =>
-    `flex min-h-10 items-center gap-2 rounded-[9px] px-4 text-sm font-semibold ${active ? 'bg-white text-ink shadow-sm' : 'text-slate-600 hover:text-ink'}`
+    `flex min-h-10 flex-1 items-center justify-center gap-1.5 rounded-[9px] px-2 text-[13px] font-semibold sm:flex-none sm:gap-2 sm:px-4 sm:text-sm ${active ? 'bg-white text-ink shadow-sm' : 'text-slate-600 hover:text-ink'}`
   const ctl = 'flex min-h-11 items-center gap-2 rounded-[10px] border border-line bg-white px-3.5 text-sm text-slate-700'
 
   return (
@@ -100,25 +104,30 @@ export function TasksPage() {
       <header className="flex flex-wrap items-end justify-between gap-4">
         <div className="flex flex-col gap-1">
           <h1 className="m-0 text-[28px] font-bold tracking-tight">{t('tasks.title')}</h1>
-          <span className="text-sm text-muted">{t('tasks.summary', { count: data.tasks.length, clients: data.clients.length })}</span>
+          <span className="text-sm text-muted">{t('tasks.summary', { count: active.length, clients: data.clients.length })}</span>
         </div>
       </header>
 
       <ClientClocks clients={data.clients} now={now} />
 
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line pb-4">
-        <div role="group" aria-label={t('view.label')} className="flex gap-1 rounded-xl bg-slate-100 p-1">
+        <div role="group" aria-label={t('view.label')} className="flex w-full gap-1 rounded-xl bg-slate-100 p-1 sm:w-auto">
           <button type="button" aria-pressed={view === 'kanban'} onClick={() => update({ view: null, month: null })} className={segBtn(view === 'kanban')}>
-            <Icon name="kanban" />
+            <span className="hidden sm:inline-flex"><Icon name="kanban" /></span>
             {t('view.kanban')}
           </button>
           <button type="button" aria-pressed={view === 'list'} onClick={() => update({ view: 'list', month: null })} className={segBtn(view === 'list')}>
-            <Icon name="list" />
+            <span className="hidden sm:inline-flex"><Icon name="list" /></span>
             {t('view.list')}
           </button>
           <button type="button" aria-pressed={view === 'calendar'} onClick={() => update({ view: 'calendar' })} className={segBtn(view === 'calendar')}>
-            <Icon name="calendar" />
+            <span className="hidden sm:inline-flex"><Icon name="calendar" /></span>
             {t('view.calendar')}
+          </button>
+          <button type="button" aria-pressed={view === 'archive'} onClick={() => update({ view: 'archive', month: null })} className={segBtn(view === 'archive')}>
+            <span className="hidden sm:inline-flex"><Icon name="archive" /></span>
+            {t('view.archive')}
+            {archived.length > 0 && <span className="rounded-full bg-slate-200 px-1.5 text-xs tabular-nums text-slate-700">{archived.length}</span>}
           </button>
         </div>
 
@@ -174,6 +183,8 @@ export function TasksPage() {
             {t('empty.clear')}
           </button>
         </div>
+      ) : view === 'archive' ? (
+        <ArchiveView data={data} tasks={filtered} onOpen={open} />
       ) : view === 'kanban' ? (
         <Board data={data} tasks={filtered} now={now} onOpen={open} defaultProjectId={defaultProjectId} trackingId={running?.taskId} />
       ) : view === 'calendar' ? (

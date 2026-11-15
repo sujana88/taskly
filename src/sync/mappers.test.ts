@@ -38,6 +38,16 @@ describe('sync mappers', () => {
     expect(back).toEqual(task)
   })
 
+  it('keeps archived_at for finished tasks only', () => {
+    const tasks = buildSampleTasks(Date.parse('2026-11-12T09:02:00Z'))
+    const done = { ...tasks.find((t) => t.status === 'done')!, archivedAt: '2026-11-13T10:00:00.000Z' }
+    const row = taskToRow(done, UID)
+    expect(row.archived_at).toBe('2026-11-13T10:00:00.000Z')
+    expect(taskFromRow(row, []).archivedAt).toBe('2026-11-13T10:00:00.000Z')
+    expect(taskToRow({ ...done, status: 'todo' }, UID).archived_at).toBeNull()
+    expect(taskToRow(tasks[0], UID).archived_at).toBeNull()
+  })
+
   it('maps time entries and orders finished ones before a running one', () => {
     const e = { id: 'e1', taskId: 't1', startedAt: '2026-11-12T08:00:00.000Z', source: 'timer' as const, billable: true }
     expect(entryFromRow(entryToRow(e, UID))).toEqual(e)

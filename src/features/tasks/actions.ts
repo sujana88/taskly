@@ -31,6 +31,8 @@ export async function updateTask(id: string, changes: Partial<Omit<Task, 'id'>>)
     const current = await db.tasks.get(id)
     if (current && current.status !== changes.status) {
       patch.completedAt = changes.status === 'done' ? new Date().toISOString() : undefined
+      // Only finished tasks can stay archived.
+      if (changes.status !== 'done') patch.archivedAt = undefined
     }
   }
   await db.tasks.update(id, patch)
@@ -39,6 +41,18 @@ export async function updateTask(id: string, changes: Partial<Omit<Task, 'id'>>)
 /** Move a task to a column and position (from drag and drop). */
 export async function moveTask(id: string, status: Status, order: number): Promise<void> {
   await updateTask(id, { status, order })
+}
+
+/** Hide a finished task from the board, list and calendar. It stays in reports. */
+export async function archiveTask(id: string): Promise<void> {
+  const task = await db.tasks.get(id)
+  if (!task || task.status !== 'done' || task.archivedAt) return
+  await db.tasks.update(id, { archivedAt: new Date().toISOString() })
+}
+
+/** Bring an archived task back to the Done column. */
+export async function restoreTask(id: string): Promise<void> {
+  await db.tasks.update(id, { archivedAt: undefined })
 }
 
 export async function deleteTask(id: string): Promise<void> {

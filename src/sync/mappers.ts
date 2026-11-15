@@ -48,6 +48,7 @@ export interface TaskRow {
   tags: string[]
   due_at: string | null
   completed_at: string | null
+  archived_at: string | null
   created_at: string
 }
 
@@ -163,6 +164,7 @@ export function taskFromRow(r: TaskRow, subtasks: SubtaskRow[]): Task {
       .map(subtaskFromRow),
     createdAt: iso(r.created_at),
     ...(r.completed_at ? { completedAt: iso(r.completed_at) } : {}),
+    ...(r.archived_at ? { archivedAt: iso(r.archived_at) } : {}),
   }
 }
 
@@ -178,6 +180,7 @@ export function taskToRow(t: Task, userId: string): TaskRow {
     tags: t.tags,
     due_at: t.dueAt ?? null,
     completed_at: t.completedAt ?? null,
+    archived_at: t.status === 'done' ? (t.archivedAt ?? null) : null,
     created_at: t.createdAt,
   }
 }

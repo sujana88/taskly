@@ -14,6 +14,8 @@ export interface CardProps {
   now: number
   /** A timer is running on this task right now. */
   tracking?: boolean
+  /** Shows an Archive button on a finished card. */
+  onArchive?: (id: string) => void
 }
 
 export function ClientChip({ client, className = '' }: { client?: Client; className?: string }) {
@@ -29,7 +31,7 @@ export function ClientChip({ client, className = '' }: { client?: Client; classN
   )
 }
 
-export function TaskCardBody({ task, client, minutes, now, tracking }: CardProps) {
+export function TaskCardBody({ task, client, minutes, now, tracking, onArchive }: CardProps) {
   const { t, i18n } = useTranslation()
   const lang = i18n.resolvedLanguage ?? 'en'
   const tz = myTimezone()
@@ -108,6 +110,25 @@ export function TaskCardBody({ task, client, minutes, now, tracking }: CardProps
             <span className="size-1.5 animate-pulse rounded-full bg-accent" aria-hidden="true" />
             {t('timer.tracking')}
           </span>
+        )}
+        {onArchive && task.status === 'done' && (
+          <button
+            type="button"
+            // The card itself is draggable and opens on click: keep this button's events to itself.
+            onPointerDown={(e) => e.stopPropagation()}
+            onKeyDown={(e) => e.stopPropagation()}
+            onClick={(e) => {
+              e.stopPropagation()
+              onArchive(task.id)
+            }}
+            aria-label={t('archive.archiveTask', { title: task.title })}
+            title={t('archive.archive')}
+            data-testid="card-archive"
+            className="-my-1 flex min-h-8 cursor-pointer items-center gap-1.5 rounded-lg px-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 hover:text-ink"
+          >
+            <Icon name="archive" size={14} />
+            {t('archive.archive')}
+          </button>
         )}
       </div>
     </>

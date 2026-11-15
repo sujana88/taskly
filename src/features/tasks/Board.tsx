@@ -22,7 +22,7 @@ import { useTranslation } from 'react-i18next'
 import { Icon } from '../../components/Icon'
 import { STATUSES, type Status, type Task } from '../../db/types'
 import { buildColumns, findContainer, moveAcross, placement, reorderWithin, type Columns } from '../../lib/board'
-import { createTask, moveTask } from './actions'
+import { archiveTask, createTask, moveTask } from './actions'
 import { SortableTaskCard, TaskCardBody } from './TaskCard'
 import type { TaskData } from './useTaskData'
 
@@ -165,6 +165,7 @@ export function Board({ data, tasks, now, onOpen, defaultProjectId, trackingId }
                       now={now}
                       tracking={trackingId === id}
                       onOpen={onOpen}
+                      onArchive={(id) => void archiveTask(id)}
                       describedBy={hintId}
                     />
                   )

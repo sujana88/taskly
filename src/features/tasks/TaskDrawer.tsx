@@ -4,7 +4,7 @@ import { Icon } from '../../components/Icon'
 import { STATUSES, type Status, type Task } from '../../db/types'
 import { cityOf, formatInZone, fromDateTimeLocal, myTimezone, sameWallClock, toDateTimeLocal } from '../../lib/time'
 import { TaskTimeSection } from '../timer/TaskTimeSection'
-import { deleteTask, newSubtask, parseTags, updateTask } from './actions'
+import { archiveTask, deleteTask, newSubtask, parseTags, restoreTask, updateTask } from './actions'
 import type { TaskData } from './useTaskData'
 
 interface DrawerProps {
@@ -97,6 +97,17 @@ function DrawerBody({ task, data, onClose, autoFocusTitle }: { task: Task; data:
       </header>
 
       <div className="flex flex-1 flex-col gap-5 overflow-y-auto px-6 py-5">
+        {task.archivedAt && (
+          <div role="status" data-testid="drawer-archived" className="flex flex-wrap items-center justify-between gap-3 rounded-xl bg-slate-100 px-4 py-3 text-sm text-slate-700">
+            <span className="flex items-center gap-2">
+              <Icon name="archive" size={16} />
+              {t('archive.archivedOn', { date: formatInZone(task.archivedAt, tz, lang, 'd MMM yyyy') })}
+            </span>
+            <button type="button" onClick={() => void restoreTask(task.id)} className="min-h-10 rounded-[10px] border border-line bg-white px-3 text-sm font-semibold hover:bg-slate-50">
+              {t('archive.restore')}
+            </button>
+          </div>
+        )}
         <div className="flex flex-col gap-1.5">
           <label htmlFor={ids.title} className={label}>
             {t('drawer.title')}
@@ -255,10 +266,18 @@ function DrawerBody({ task, data, onClose, autoFocusTitle }: { task: Task; data:
             </button>
           </div>
         ) : (
+          <div className="flex items-center gap-1">
+          {task.status === 'done' && !task.archivedAt && (
+            <button type="button" onClick={() => void archiveTask(task.id)} className="flex min-h-10 items-center gap-2 rounded-[10px] px-3 text-sm font-medium text-slate-700 hover:bg-slate-100">
+              <Icon name="archive" size={16} />
+              {t('archive.archive')}
+            </button>
+          )}
           <button type="button" onClick={() => setConfirming(true)} className="flex min-h-10 items-center gap-2 rounded-[10px] px-3 text-sm font-medium text-red-700 hover:bg-red-50">
             <Icon name="trash" size={16} />
             {t('drawer.delete')}
           </button>
+          </div>
         )}
       </footer>
     </div>
