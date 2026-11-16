@@ -20,7 +20,8 @@ test('tracks time on a task from the drawer and shows it everywhere', async ({ p
   const bar = page.getByTestId('timer-bar')
   await expect(bar).toContainText('Tracking')
   await expect(bar).toContainText('Hero section redesign')
-  await page.clock.fastForward('20:00')
+  // 20 minutes of continuous work (steps under the 10-minute away check).
+  for (let i = 0; i < 4; i++) await page.clock.fastForward('05:00')
   await expect(bar.getByTestId('timer-bar-clock')).toHaveText(/^20:0\d$/)
   await expect(page).toHaveTitle(/^▶ 20:0\d · Hero section redesign/)
   await page.screenshot({ path: `${shots}/08-timer-drawer.png` })

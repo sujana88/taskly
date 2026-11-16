@@ -42,6 +42,10 @@ export interface Subtask {
   done: boolean
 }
 
+/** A task's label: how important it is. */
+export type Priority = 'low' | 'medium' | 'high'
+export const PRIORITIES: Priority[] = ['low', 'medium', 'high']
+
 export interface Task {
   id: string
   projectId: string
@@ -53,6 +57,8 @@ export interface Task {
   tags: string[]
   /** UTC ISO string. */
   dueAt?: string
+  /** Optional label shown as a coloured pill: low (green), medium (yellow), high (blue). */
+  priority?: Priority
   subtasks: Subtask[]
   createdAt: string
   completedAt?: string

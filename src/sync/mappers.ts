@@ -47,6 +47,7 @@ export interface TaskRow {
   sort_order: number
   tags: string[]
   due_at: string | null
+  priority?: Task['priority'] | null
   completed_at: string | null
   archived_at: string | null
   cancelled_at: string | null
@@ -197,6 +198,7 @@ export function taskFromRow(r: TaskRow, subtasks: SubtaskRow[]): Task {
     order: r.sort_order,
     tags: r.tags,
     ...(r.due_at ? { dueAt: iso(r.due_at) } : {}),
+    ...(r.priority ? { priority: r.priority } : {}),
     subtasks: subtasks
       .filter((s) => s.task_id === r.id)
       .sort((a, b) => a.position - b.position)
@@ -219,6 +221,7 @@ export function taskToRow(t: Task, userId: string): TaskRow {
     sort_order: t.order,
     tags: t.tags,
     due_at: t.dueAt ?? null,
+    priority: t.priority ?? null,
     completed_at: t.completedAt ?? null,
     archived_at: t.status === 'done' ? (t.archivedAt ?? null) : null,
     cancelled_at: t.status !== 'done' ? (t.cancelledAt ?? null) : null,

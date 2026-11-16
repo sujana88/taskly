@@ -1,11 +1,12 @@
 import { useEffect, useId, useRef, useState, type FormEvent } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Icon } from '../../components/Icon'
-import { STATUSES, type Status, type Task } from '../../db/types'
+import { PRIORITIES, STATUSES, type Status, type Task } from '../../db/types'
 import { cityOf, formatInZone, fromDateTimeLocal, myTimezone, sameWallClock, toDateTimeLocal } from '../../lib/time'
 import { TaskTimeSection } from '../timer/TaskTimeSection'
 import { archiveTask, deleteTask, newSubtask, parseTags, restoreTask, updateTask } from './actions'
 import { CancelTaskDialog } from './CancelTaskDialog'
+import { PRIORITY_STYLE } from './priority'
 import type { TaskData } from './useTaskData'
 
 interface DrawerProps {
@@ -167,6 +168,37 @@ function DrawerBody({ task, data, onClose, autoFocusTitle }: { task: Task; data:
                 </optgroup>
               ))}
             </select>
+          </div>
+        </div>
+
+        <div className="flex flex-col gap-1.5">
+          <span id={`${ids.title}-label`} className={label}>
+            {t('priority.label')}
+          </span>
+          <div role="radiogroup" aria-labelledby={`${ids.title}-label`} className="flex flex-wrap gap-2" data-testid="priority-picker">
+            {([undefined, ...PRIORITIES] as const).map((p) => {
+              const on = task.priority === p
+              return (
+                <button
+                  key={p ?? 'none'}
+                  type="button"
+                  role="radio"
+                  aria-checked={on}
+                  onClick={() => void updateTask(task.id, { priority: p })}
+                  className={`min-h-10 min-w-[84px] rounded-[10px] px-3 text-xs font-extrabold tracking-wider uppercase transition ${
+                    p
+                      ? on
+                        ? `${PRIORITY_STYLE[p]} shadow-sm ring-2 ring-offset-2 ring-slate-300`
+                        : `${PRIORITY_STYLE[p]} opacity-35 hover:opacity-70`
+                      : on
+                        ? 'bg-white text-slate-700 ring-2 ring-slate-300'
+                        : 'border border-dashed border-slate-300 text-slate-500 hover:text-ink'
+                  }`}
+                >
+                  {t(`priority.${p ?? 'none'}`)}
+                </button>
+              )
+            })}
           </div>
         </div>
 

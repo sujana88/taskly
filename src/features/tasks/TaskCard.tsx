@@ -3,7 +3,8 @@ import { CSS } from '@dnd-kit/utilities'
 import type { KeyboardEvent } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Icon } from '../../components/Icon'
-import type { Client, Task } from '../../db/types'
+import type { Client, Priority, Task } from '../../db/types'
+import { PRIORITY_STYLE } from './priority'
 import { cityOf, formatInZone, formatMinutes, isWithinWorkHours, myTimezone, sameWallClock } from '../../lib/time'
 import { textShade } from '../../lib/color'
 
@@ -18,6 +19,16 @@ export interface CardProps {
   onArchive?: (id: string) => void
   /** Shows a Cancel button on an unfinished card. */
   onCancel?: (id: string) => void
+}
+
+export function PriorityPill({ priority, className = '' }: { priority?: Priority; className?: string }) {
+  const { t } = useTranslation()
+  if (!priority) return null
+  return (
+    <span className={`inline-flex shrink-0 items-center rounded-md px-2.5 py-1 text-[11px] leading-none font-extrabold tracking-wider uppercase shadow-sm ${PRIORITY_STYLE[priority]} ${className}`} data-testid="priority-pill">
+      {t(`priority.${priority}`)}
+    </span>
+  )
 }
 
 export function ClientChip({ client, className = '' }: { client?: Client; className?: string }) {
@@ -46,16 +57,19 @@ export function TaskCardBody({ task, client, minutes, now, tracking, onArchive, 
 
   return (
     <>
-      {task.tags.length > 0 && (
-        <div className="flex flex-wrap gap-1.5">
-          {task.tags.map((tag) => (
-            <span
-              key={tag}
-              className={`rounded-md px-2 py-1 text-xs font-medium ${tag.toLowerCase() === 'urgent' ? 'bg-red-50 font-semibold text-red-700' : 'bg-slate-100 text-slate-700'}`}
-            >
-              {tag}
-            </span>
-          ))}
+      {(task.tags.length > 0 || task.priority) && (
+        <div className="flex items-start justify-between gap-2">
+          <div className="flex min-w-0 flex-wrap gap-1.5">
+            {task.tags.map((tag) => (
+              <span
+                key={tag}
+                className={`rounded-md px-2 py-1 text-xs font-medium ${tag.toLowerCase() === 'urgent' ? 'bg-red-50 font-semibold text-red-700' : 'bg-slate-100 text-slate-700'}`}
+              >
+                {tag}
+              </span>
+            ))}
+          </div>
+          <PriorityPill priority={task.priority} />
         </div>
       )}
       <h3 className="m-0 text-base leading-snug font-semibold">{task.title}</h3>

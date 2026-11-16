@@ -3,7 +3,7 @@ import { Icon } from '../../components/Icon'
 import type { Task } from '../../db/types'
 import type { SortDir, SortKey } from '../../lib/filter'
 import { cityOf, formatInZone, formatMinutes, myTimezone, sameWallClock } from '../../lib/time'
-import { ClientChip } from './TaskCard'
+import { ClientChip, PriorityPill } from './TaskCard'
 import type { TaskData } from './useTaskData'
 
 interface ListProps {
@@ -60,9 +60,12 @@ export function ListView({ data, tasks, now, sort, dir, onSort, onOpen }: ListPr
             return (
               <tr key={task.id} className="hover:bg-slate-50">
                 <td className="border-b border-slate-100 px-4 py-3">
-                  <button type="button" onClick={() => onOpen(task.id)} className="min-h-8 text-left font-semibold hover:text-accent hover:underline">
-                    {task.title}
-                  </button>
+                  <span className="flex items-center gap-2">
+                    <button type="button" onClick={() => onOpen(task.id)} className="min-h-8 text-left font-semibold hover:text-accent hover:underline">
+                      {task.title}
+                    </button>
+                    <PriorityPill priority={task.priority} className="px-1.5 py-0.5 text-[10px]" />
+                  </span>
                 </td>
                 <td className="border-b border-slate-100 px-4 py-3">
                   <ClientChip client={client} />

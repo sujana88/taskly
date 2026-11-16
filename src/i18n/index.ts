@@ -186,6 +186,7 @@ const en = {
   },
   list: { task: 'Task', client: 'Client', status: 'Status', dueMine: 'Due (your time)', dueClient: 'Due (client time)', subtasks: 'Subtasks', logged: 'Logged', sameZone: 'Same time zone' },
   empty: { title: 'No tasks match', body: 'Try another search or clear the filters.', clear: 'Clear filters', column: 'Drop a task here' },
+  priority: { label: 'Label', none: 'None', low: 'Low', medium: 'Medium', high: 'High' },
   drawer: {
     close: 'Close',
     cancel: 'Cancel',
@@ -707,6 +708,7 @@ const id: Dict = {
   },
   list: { task: 'Tugas', client: 'Klien', status: 'Status', dueMine: 'Tenggat (waktu Anda)', dueClient: 'Tenggat (waktu klien)', subtasks: 'Subtugas', logged: 'Tercatat', sameZone: 'Zona waktu sama' },
   empty: { title: 'Tidak ada tugas yang cocok', body: 'Coba kata kunci lain atau hapus filter.', clear: 'Hapus filter', column: 'Letakkan tugas di sini' },
+  priority: { label: 'Label', none: 'Tanpa', low: 'Rendah', medium: 'Sedang', high: 'Tinggi' },
   drawer: {
     close: 'Tutup',
     cancel: 'Batal',

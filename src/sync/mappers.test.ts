@@ -54,6 +54,14 @@ describe('sync mappers', () => {
     expect(taskToRow(tasks[0], UID).archived_at).toBeNull()
   })
 
+  it('round-trips the task label', () => {
+    const task = { ...buildSampleTasks(Date.parse('2026-11-12T09:02:00Z'))[0], priority: 'high' as const }
+    const row = taskToRow(task, UID)
+    expect(row.priority).toBe('high')
+    expect(taskFromRow(row, []).priority).toBe('high')
+    expect(taskToRow({ ...task, priority: undefined }, UID).priority).toBeNull()
+  })
+
   it('keeps cancelled_at for unfinished tasks only', () => {
     const tasks = buildSampleTasks(Date.parse('2026-11-12T09:02:00Z'))
     const open = { ...tasks.find((t) => t.status === 'in_progress')!, cancelledAt: '2026-11-13T10:00:00.000Z' }
