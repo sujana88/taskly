@@ -13,15 +13,18 @@ import { localeFor } from './time'
 /** Currencies without everyday cents. Keep in step with currency.ts. */
 const NO_CENTS = new Set(['IDR', 'JPY', 'KRW', 'VND', 'CLP', 'ISK'])
 
-export const DEFAULT_UNITS = ['Hours', 'Project']
+export const DEFAULT_UNITS = ['Hour', 'Hours', 'Service', 'Project']
 export const DEFAULT_INVOICING: InvoiceSettings = { prefix: 'INV-', dueDays: 14, notes: '', paymentDetails: '', taxRates: [], units: DEFAULT_UNITS }
 
 /** Settings saved before units existed get the defaults. */
 export const unitsOf = (s?: Partial<InvoiceSettings>): string[] => (s?.units?.length ? s.units : DEFAULT_UNITS)
 
-/** The unit for tracked time: the first that reads like hours ("Hour", "Jam", "hrs"), else the first one. */
+/**
+ * The unit for tracked time: "Hours" (plural) when it is in the list, since time is rarely a
+ * single hour; else the first that reads like hours ("Hour", "Jam", "hr"); else the first one.
+ */
 export function timeUnit(units: string[]): string | undefined {
-  return units.find((u) => /hour|\bhrs?\b|\bjam\b|stunde|heure/i.test(u)) ?? units[0]
+  return units.find((u) => /hours|\bhrs\b/i.test(u)) ?? units.find((u) => /hour|\bhr\b|\bjam\b|stunde|heure/i.test(u)) ?? units[0]
 }
 
 /** Trims, drops empty and repeated names (ignoring case), keeps the order. */

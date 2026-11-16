@@ -118,7 +118,7 @@ test('creates an invoice from tracked time, sends it, and prints it as PDF', asy
   await expect(doc.getByTestId('doc-unit').first()).toHaveText('Hours')
   await expect(doc.getByTestId('doc-unit').last()).toHaveText('Project')
   // Pay to (from Settings) at the bottom left, a handwritten thank-you at the bottom right.
-  await expect(doc.getByTestId('doc-pay-to')).toHaveText('Pay to: Bank BCAAccount name: Your NameAccount number: 123 456 7890')
+  await expect(doc.getByTestId('doc-pay-to')).toHaveText('Pay to: Bank AAAAccount name: Your NameAccount number: 123 456 7890SWIFT Code: XXXXXXXX')
   await expect(doc.getByTestId('doc-thanks')).toHaveText('Thank you!')
   await expect(doc).not.toContainText('Thank you for your business')
   await expect(doc.locator('img')).toBeVisible()
@@ -195,7 +195,7 @@ test('Indonesian invoice and phone layout', async ({ page }) => {
 test('settings: units for invoice lines', async ({ page }) => {
   await page.goto('/#/settings')
   const units = page.getByTestId('unit-list')
-  await expect(units.getByRole('listitem')).toHaveText(['Hours', 'Project'])
+  await expect(units.getByRole('listitem')).toHaveText(['Hour', 'Hours', 'Service', 'Project'])
   await page.getByLabel('New unit').fill('Day')
   await page.getByRole('button', { name: 'Add unit' }).click()
   await page.getByLabel('New unit').fill('day')
@@ -205,12 +205,12 @@ test('settings: units for invoice lines', async ({ page }) => {
   await page.getByRole('button', { name: 'Remove unit Project' }).click()
   await page.getByRole('button', { name: 'Save units' }).click()
   await page.reload()
-  await expect(units.getByRole('listitem')).toHaveText(['Hours', 'Day', 'Pcs'])
+  await expect(units.getByRole('listitem')).toHaveText(['Hour', 'Hours', 'Service', 'Day', 'Pcs'])
   await page.getByRole('region', { name: 'Units' }).screenshot({ path: `${shots}/58-units.png` })
 
   // The editor offers them on each line.
   await page.goto('/#/invoices')
   await page.getByRole('button', { name: 'New invoice' }).first().click()
   await page.getByRole('dialog').getByRole('button', { name: 'Create draft' }).click()
-  await expect(page.getByLabel('Unit 1').locator('option')).toHaveText(['—', 'Hours', 'Day', 'Pcs'])
+  await expect(page.getByLabel('Unit 1').locator('option')).toHaveText(['—', 'Hour', 'Hours', 'Service', 'Day', 'Pcs'])
 })

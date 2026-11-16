@@ -265,7 +265,7 @@ export function profileInvoicing(r: ProfileRow): InvoiceSettings {
     notes: r.invoice_notes ?? '',
     paymentDetails: r.payment_details ?? '',
     taxRates: (r.tax_rates ?? []).map((x) => ({ ...x, rate: Number(x.rate) })),
-    units: r.invoice_units ?? ['Hours', 'Project'],
+    units: r.invoice_units ?? ['Hour', 'Hours', 'Service', 'Project'],
   }
 }
 
