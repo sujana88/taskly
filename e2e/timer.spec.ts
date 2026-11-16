@@ -137,3 +137,34 @@ test('timer safety settings are saved', async ({ page }) => {
   await page.getByRole('button', { name: 'Standard' }).click()
   await expect(page.getByRole('region', { name: 'Forgotten-timer safety' })).toContainText('after 2 hours')
 })
+
+test('a memo on the Focus page is saved on the time entry, in both modes', async ({ page }) => {
+  await page.goto('/#/focus')
+  await page.getByRole('button', { name: 'Standard' }).click()
+  await expect(page.getByText('Time Tracking')).toBeVisible()
+  await page.getByLabel('Working on').selectOption({ label: 'Pricing page v2' })
+  const memo = page.getByLabel('Memo')
+  await memo.fill('Comparison table layout')
+  await page.getByTestId('standard-start').click()
+  await page.clock.fastForward('03:00')
+  // Edited while running: the entry follows.
+  await memo.fill('Comparison table layout and FAQ')
+  await page.clock.fastForward('00:02')
+  await page.screenshot({ path: `${shots}/76-focus-memo.png` })
+  await page.getByTestId('standard-stop').click()
+
+  // Pomodoro: the memo goes onto the focus block too.
+  await page.getByRole('button', { name: 'Pomodoro' }).click()
+  await expect(memo).toHaveValue('Comparison table layout and FAQ')
+  await memo.fill('Final polish')
+  await page.getByRole('region', { name: 'Pomodoro timer' }).getByRole('button', { name: 'Start' }).click()
+  await page.clock.fastForward('02:00')
+  await page.getByRole('region', { name: 'Pomodoro timer' }).getByRole('button', { name: 'Pause' }).click()
+
+  const dialog = await openTask(page, 'Pricing page v2')
+  const entries = dialog.getByTestId('time-entry')
+  await expect(entries.nth(0)).toContainText('Pomodoro')
+  await expect(entries.nth(0)).toContainText('Final polish')
+  await expect(entries.nth(1)).toContainText('Timer')
+  await expect(entries.nth(1)).toContainText('Comparison table layout and FAQ')
+})

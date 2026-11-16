@@ -121,13 +121,15 @@ function ManualForm({ taskId, data, now, onDone }: { taskId: string; data: TaskD
   const tz = myTimezone()
   const today = todayIn(tz, now)
   const [date, setDate] = useState(today)
-  // A start that makes the default 30 minutes end about now.
-  const [time, setTime] = useState(() => formatInZone(Math.floor((now - 30 * 60_000) / (5 * 60_000)) * 5 * 60_000, tz, 'en', 'HH:mm'))
+  const [openedAt] = useState(now)
   const [hours, setHours] = useState('0')
   const [mins, setMins] = useState('30')
   const [note, setNote] = useState('')
   const ids = { date: useId(), time: useId(), hours: useId(), mins: useId(), note: useId() }
   const minutes = (Number(hours) || 0) * 60 + (Number(mins) || 0)
+  // Until the start time is set by hand, it follows the duration so the work ends about now.
+  const [picked, setTime] = useState<string | null>(null)
+  const time = picked ?? formatInZone(Math.floor((openedAt - Math.max(minutes, 0) * 60_000) / (5 * 60_000)) * 5 * 60_000, tz, 'en', 'HH:mm')
   const range = manualRange(date, time, minutes, tz)
   const problem = manualProblem(range, now)
   const clashes = range && !problem ? overlapping(data.entries, range, now) : []

@@ -64,6 +64,23 @@ export const usePomodoro = create<PomodoroStore>()(
 export type FocusMode = 'standard' | 'pomodoro'
 
 /** Which timer the Focus page shows when nothing is running: kept per device. */
-export const useFocusMode = create<{ mode: FocusMode; setMode: (mode: FocusMode) => void }>()(
-  persist((set) => ({ mode: 'pomodoro', setMode: (mode) => set({ mode }) }), { name: 'taskly.focusMode', storage: createJSONStorage(() => localStorage) }),
+export interface Memo {
+  /** The task the memo is about: it is only written onto that task's time. */
+  taskId: string | null
+  text: string
+}
+
+/** Which timer the Focus page shows, and the memo for what is being done right now. Kept per device. */
+export const useFocusMode = create<{ mode: FocusMode; setMode: (mode: FocusMode) => void; memo: Memo; setMemo: (memo: Memo) => void }>()(
+  persist(
+    (set) => ({ mode: 'pomodoro', setMode: (mode) => set({ mode }), memo: { taskId: null, text: '' }, setMemo: (memo) => set({ memo }) }),
+    { name: 'taskly.focusMode', storage: createJSONStorage(() => localStorage) },
+  ),
 )
+
+/** The memo text to put on a new entry for `taskId`, if the memo is about that task. */
+export function memoFor(taskId: string): string | undefined {
+  const m = useFocusMode.getState().memo
+  const text = m.text.trim().slice(0, 2000)
+  return m.taskId === taskId && text ? text : undefined
+}

@@ -21,11 +21,11 @@ async function closeOpen(at: number): Promise<void> {
 }
 
 /** Start tracking a task. Whatever was running stops first. */
-export async function startEntry(taskId: string, source: TimeEntry['source'] = 'timer', at = Date.now()): Promise<string> {
+export async function startEntry(taskId: string, source: TimeEntry['source'] = 'timer', at = Date.now(), note?: string): Promise<string> {
   const id = crypto.randomUUID()
   await db.transaction('rw', db.timeEntries, async () => {
     await closeOpen(at)
-    await db.timeEntries.add({ id, taskId, startedAt: iso(at), source, billable: true })
+    await db.timeEntries.add({ id, taskId, startedAt: iso(at), source, billable: true, ...(note ? { note } : {}) })
   })
   return id
 }
@@ -42,6 +42,12 @@ export async function addManualEntry(taskId: string, start: number, end: number,
   const text = note?.trim().slice(0, 2000)
   await db.timeEntries.add({ id, taskId, startedAt: iso(start), endedAt: iso(end), source: 'manual', billable: true, ...(text ? { note: text } : {}) })
   return id
+}
+
+/** The memo typed while a timer runs is kept on that running entry. */
+export async function setEntryNote(id: string, note: string): Promise<void> {
+  const text = note.trim().slice(0, 2000)
+  await db.timeEntries.update(id, { note: text || undefined })
 }
 
 /** A forgotten timer: stop it at `at` and mark it for review (left out of invoices until checked). */

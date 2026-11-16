@@ -6,7 +6,7 @@
  */
 import { advance, isDue, pause, resetPhase, selectPhase, start, type Phase } from '../../lib/pomodoro'
 import { startEntry, stopEntry } from './actions'
-import { localDay, usePomodoro } from './store'
+import { localDay, memoFor, usePomodoro } from './store'
 
 const pomo = () => usePomodoro.getState()
 
@@ -19,7 +19,7 @@ function pausePomodoroOnly(now: number) {
 export async function startTaskTimer(taskId: string): Promise<void> {
   const now = Date.now()
   pausePomodoroOnly(now)
-  await startEntry(taskId, 'timer', now)
+  await startEntry(taskId, 'timer', now, memoFor(taskId))
 }
 
 export async function stopTaskTimer(): Promise<void> {
@@ -33,7 +33,7 @@ export async function startPomodoro(): Promise<void> {
   const { state, taskId, setState } = pomo()
   if (state.status === 'running') return
   setState(start(state, now))
-  if (state.phase === 'focus' && taskId) await startEntry(taskId, 'pomodoro', now)
+  if (state.phase === 'focus' && taskId) await startEntry(taskId, 'pomodoro', now, memoFor(taskId))
   else await stopEntry(now) // breaks are not work time
 }
 
@@ -51,7 +51,7 @@ export async function setPomodoroTask(taskId: string | null): Promise<void> {
   const { state, setTask } = pomo()
   setTask(taskId)
   if (state.status !== 'running' || state.phase !== 'focus') return
-  if (taskId) await startEntry(taskId, 'pomodoro', now)
+  if (taskId) await startEntry(taskId, 'pomodoro', now, memoFor(taskId))
   else await stopEntry(now)
 }
 

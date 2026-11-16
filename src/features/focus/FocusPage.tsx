@@ -10,7 +10,7 @@ import { cleanGuard, guardable } from '../../lib/timerGuard'
 import { useCurrentUser } from '../auth/useCurrentUser'
 import { ClientChip } from '../tasks/TaskCard'
 import { useTaskData } from '../tasks/useTaskData'
-import { entryMs } from '../timer/actions'
+import { entryMs, setEntryNote } from '../timer/actions'
 import { notificationsSupported } from '../timer/alerts'
 import { choosePhase, pausePomodoro, resetPomodoro, setPomodoroTask, skipPhase, startPomodoro, startTaskTimer, stopTaskTimer } from '../timer/controller'
 import { localDay, useFocusMode, usePomodoro, type FocusMode } from '../timer/store'
@@ -201,6 +201,8 @@ export function FocusPage() {
               <span className="text-[13px] text-muted">{t('focus.noTaskHint')}</span>
             )}
           </div>
+
+          <MemoField taskId={task?.id ?? null} running={active && !active.endedAt && active.taskId === task?.id ? active : undefined} />
 
           {mode === 'standard' ? (
             <div className="grid w-full max-w-md gap-2">
@@ -428,5 +430,44 @@ function GuardCard() {
         {t('focus.guardChange')}
       </Link>
     </section>
+  )
+}
+
+/**
+ * What is being done right now. Belongs to the picked task; written onto the time entry when the
+ * timer starts (Standard or a Pomodoro focus block) and kept up to date while it runs.
+ */
+function MemoField({ taskId, running }: { taskId: string | null; running?: { id: string; note?: string } }) {
+  const { t } = useTranslation()
+  const id = useId()
+  const memo = useFocusMode((s) => s.memo)
+  const setMemo = useFocusMode((s) => s.setMemo)
+  const text = memo.taskId === taskId ? memo.text : ''
+
+  // Typing while a timer runs updates that entry a moment later.
+  const runningId = running?.id
+  const runningNote = running?.note ?? ''
+  useEffect(() => {
+    if (!runningId || memo.taskId !== taskId || memo.text.trim() === runningNote) return
+    const timer = setTimeout(() => void setEntryNote(runningId, memo.text), 400)
+    return () => clearTimeout(timer)
+  }, [runningId, runningNote, memo, taskId])
+
+  return (
+    <div className="flex w-full max-w-md flex-col gap-1.5">
+      <label htmlFor={id} className="text-[13px] font-semibold text-slate-700">
+        {t('focus.memo')}
+      </label>
+      <textarea
+        id={id}
+        value={text}
+        rows={2}
+        maxLength={200}
+        disabled={!taskId}
+        onChange={(e) => setMemo({ taskId, text: e.target.value })}
+        className="w-full resize-none rounded-[10px] border border-green-100 bg-green-50/70 px-3 py-2.5 text-[15px] leading-relaxed outline-none focus:border-green-500 focus:bg-white disabled:cursor-not-allowed disabled:opacity-60"
+        data-testid="focus-memo"
+      />
+    </div>
   )
 }
