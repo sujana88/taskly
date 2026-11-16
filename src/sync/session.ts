@@ -7,6 +7,7 @@ import { resetRedirectUrl } from '../lib/authLink'
 import { AUTH_LINK, supabase } from '../lib/supabase'
 import { useRecovery } from '../features/auth/recovery'
 import { startSync, stopSync } from './engine'
+import { profileChanges } from './mappers'
 
 const nameOf = (u: SupabaseUser) => String(u.user_metadata?.name ?? '').trim() || (u.email ?? '').split('@')[0]
 
@@ -108,10 +109,8 @@ export async function cloudLogOut(): Promise<void> {
   await supabase!.auth.signOut().catch(() => undefined)
 }
 
-export async function cloudUpdateProfile(id: string, changes: Partial<Pick<User, 'name' | 'workHours'>>): Promise<void> {
-  const row: Record<string, unknown> = {}
-  if (changes.name !== undefined) row.name = changes.name
-  if (changes.workHours) Object.assign(row, { work_start: changes.workHours.start, work_end: changes.workHours.end, work_days: changes.workHours.days })
+export async function cloudUpdateProfile(id: string, changes: Partial<Pick<User, 'name' | 'workHours' | 'business' | 'invoicing'>>): Promise<void> {
+  const row = profileChanges(changes)
   const { error } = await supabase!.from('profiles').update(row).eq('id', id)
   if (error) console.warn('[taskly sync] profile not saved', error.message)
 }

@@ -1,7 +1,8 @@
-import { useId, useState, type FormEvent, type ReactNode } from 'react'
+import { useId, useRef, useState, type FormEvent, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Icon } from '../../components/Icon'
-import type { User, WorkHours } from '../../db/types'
+import type { Business, User, WorkHours } from '../../db/types'
+import { LOGO_ACCEPT, prepareLogo } from '../../lib/logo'
 import { BACKEND } from '../../lib/supabase'
 import { AuthError, changePassword, logOut, updateProfile, type AuthErrorCode } from '../auth/auth'
 import { Field, FormError, Strength, primaryBtn } from '../auth/fields'
@@ -57,9 +58,10 @@ export function ProfilePage() {
       <div className="grid items-start gap-5 xl:grid-cols-2">
         <div className="flex flex-col gap-5">
           <NameSection user={user} />
-          <HoursSection user={user} />
+          <BusinessSection user={user} />
         </div>
         <div className="flex flex-col gap-5">
+          <HoursSection user={user} />
           <PasswordSection />
           <Section id="logout-h" title={t('profile.logoutTitle')} subtitle={t('profile.logoutBody')}>
             <button type="button" onClick={logOut} className="flex min-h-11 items-center gap-2 self-start rounded-xl border border-line px-4 text-sm font-bold hover:bg-slate-50">
@@ -103,6 +105,103 @@ function NameSection({ user }: { user: User }) {
         <Saved show={saved} text={t('profile.saved')} />
         <button type="submit" disabled={name.trim() === user.name} className={`${primaryBtn} sm:w-auto sm:self-start sm:px-6`}>
           {t('clients.form.save')}
+        </button>
+      </form>
+    </Section>
+  )
+}
+
+const EMPTY_BUSINESS: Business = { companyName: '', address: '', email: '', phone: '', taxId: '' }
+
+/** Company details and logo, printed on invoices. */
+function BusinessSection({ user }: { user: User }) {
+  const { t } = useTranslation()
+  const initial = user.business ?? EMPTY_BUSINESS
+  const [b, setB] = useState<Business>(initial)
+  const [saved, setSaved] = useState(false)
+  const [logoError, setLogoError] = useState(false)
+  const fileRef = useRef<HTMLInputElement>(null)
+  const ids = { address: useId(), logo: useId() }
+  const changed = JSON.stringify(b) !== JSON.stringify(initial)
+  const set = (patch: Partial<Business>) => {
+    setB((x) => ({ ...x, ...patch }))
+    setSaved(false)
+  }
+
+  const onFile = async (file: File | undefined) => {
+    if (!file) return
+    setLogoError(false)
+    try {
+      set({ logo: await prepareLogo(file) })
+    } catch {
+      setLogoError(true)
+    }
+    if (fileRef.current) fileRef.current.value = ''
+  }
+
+  return (
+    <Section id="business-h" title={t('business.title')} subtitle={t('business.subtitle')}>
+      <form
+        className="flex flex-col gap-4"
+        noValidate
+        data-testid="business-form"
+        onSubmit={async (e) => {
+          e.preventDefault()
+          const clean = { ...b, companyName: b.companyName.trim(), address: b.address.trim(), email: b.email.trim(), phone: b.phone.trim(), taxId: b.taxId.trim() }
+          await updateProfile(user.id, { business: clean })
+          setB(clean)
+          setSaved(true)
+        }}
+      >
+        <div className="flex flex-col gap-2">
+          <span id={ids.logo} className="text-[13px] font-bold text-slate-700">
+            {t('business.logo')}
+          </span>
+          <div className="flex flex-wrap items-center gap-4">
+            <div className="flex h-20 w-48 items-center justify-center overflow-hidden rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-2" data-testid="logo-preview">
+              {b.logo ? <img src={b.logo} alt={t('business.logo')} className="max-h-full max-w-full object-contain" /> : <span className="text-xs text-muted">{t('business.noLogo')}</span>}
+            </div>
+            <div className="flex flex-col gap-2">
+              <label className="flex min-h-10 cursor-pointer items-center gap-2 self-start rounded-xl border border-line px-3.5 text-sm font-bold hover:bg-slate-50 focus-within:ring-4 focus-within:ring-blue-100">
+                <Icon name="download" size={16} className="rotate-180" />
+                {b.logo ? t('business.change') : t('business.upload')}
+                <input ref={fileRef} type="file" accept={LOGO_ACCEPT} aria-describedby={ids.logo} className="sr-only" onChange={(e) => void onFile(e.target.files?.[0])} data-testid="logo-input" />
+              </label>
+              {b.logo && (
+                <button type="button" onClick={() => set({ logo: undefined })} className="flex min-h-9 items-center gap-2 self-start rounded-xl px-3 text-sm font-medium text-red-700 hover:bg-red-50">
+                  <Icon name="trash" size={15} />
+                  {t('business.remove')}
+                </button>
+              )}
+            </div>
+          </div>
+          <p className={`m-0 text-[13px] ${logoError ? 'text-red-700' : 'text-muted'}`} role={logoError ? 'alert' : undefined}>
+            {logoError ? t('business.logoError') : t('business.logoHint')}
+          </p>
+        </div>
+        <Field label={t('business.companyName')} value={b.companyName} onChange={(v) => set({ companyName: v })} autoComplete="organization" hint={t('business.companyNameHint')} />
+        <div className="flex flex-col gap-1.5">
+          <label htmlFor={ids.address} className="text-[13px] font-bold text-slate-700">
+            {t('business.address')}
+          </label>
+          <textarea
+            id={ids.address}
+            value={b.address}
+            onChange={(e) => set({ address: e.target.value })}
+            rows={3}
+            maxLength={600}
+            autoComplete="street-address"
+            className="rounded-2xl border border-line bg-slate-50 px-4 py-3 text-[15px] leading-relaxed outline-none focus:border-accent focus:bg-white focus:ring-4 focus:ring-blue-100"
+          />
+        </div>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Field label={t('business.email')} type="email" value={b.email} onChange={(v) => set({ email: v })} autoComplete="email" />
+          <Field label={t('business.phone')} type="tel" value={b.phone} onChange={(v) => set({ phone: v })} autoComplete="tel" />
+        </div>
+        <Field label={t('business.taxId')} value={b.taxId} onChange={(v) => set({ taxId: v })} />
+        <Saved show={saved} text={t('profile.saved')} />
+        <button type="submit" disabled={!changed} className={`${primaryBtn} sm:w-auto sm:self-start sm:px-6`}>
+          {t('business.save')}
         </button>
       </form>
     </Section>

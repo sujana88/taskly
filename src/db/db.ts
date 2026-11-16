@@ -1,5 +1,5 @@
 import Dexie, { type EntityTable } from 'dexie'
-import type { Client, Project, Task, TimeEntry, User } from './types'
+import type { Client, Invoice, Project, Task, TimeEntry, User } from './types'
 
 export class TasklyDB extends Dexie {
   clients!: EntityTable<Client, 'id'>
@@ -7,6 +7,7 @@ export class TasklyDB extends Dexie {
   tasks!: EntityTable<Task, 'id'>
   timeEntries!: EntityTable<TimeEntry, 'id'>
   users!: EntityTable<User, 'id'>
+  invoices!: EntityTable<Invoice, 'id'>
 
   // The database keeps its original name so data saved before the Taskly rename is not lost.
   constructor(name = 'overlap') {
@@ -19,6 +20,8 @@ export class TasklyDB extends Dexie {
     })
     // v2: local demo accounts.
     this.version(2).stores({ users: 'id, &email' })
+    // v3: invoices.
+    this.version(3).stores({ invoices: 'id, clientId, issueDate, number' })
   }
 }
 

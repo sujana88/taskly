@@ -11,7 +11,7 @@
 import Dexie, { type Transaction } from 'dexie'
 import type { RealtimeChannel } from '@supabase/supabase-js'
 import { db } from '../db/db'
-import type { Client, Project, Task, TimeEntry, User } from '../db/types'
+import type { Client, Invoice, Project, Task, TimeEntry, User } from '../db/types'
 import { DEFAULT_HOURS } from '../features/auth/auth'
 import { supabase } from '../lib/supabase'
 import {
@@ -19,6 +19,10 @@ import {
   clientToRow,
   entryFromRow,
   entryToRow,
+  invoiceFromRow,
+  invoiceToRow,
+  profileBusiness,
+  profileInvoicing,
   orderEntriesForUpsert,
   profileHours,
   projectFromRow,
@@ -28,6 +32,7 @@ import {
   taskFromRow,
   taskToRow,
   type ClientRow,
+  type InvoiceRow,
   type ProfileRow,
   type ProjectRow,
   type SubtaskRow,
@@ -37,9 +42,9 @@ import {
 import { onPomodoroRemote, pullPomodoro, recountSessions, startPomodoroSync, stopPomodoroSync } from './pomodoroSync'
 import { useSyncStatus } from './status'
 
-type LocalTable = 'clients' | 'projects' | 'tasks' | 'timeEntries'
-const ORDER: LocalTable[] = ['clients', 'projects', 'tasks', 'timeEntries']
-const REMOTE: Record<LocalTable, string> = { clients: 'clients', projects: 'projects', tasks: 'tasks', timeEntries: 'time_entries' }
+type LocalTable = 'clients' | 'projects' | 'tasks' | 'timeEntries' | 'invoices'
+const ORDER: LocalTable[] = ['clients', 'projects', 'tasks', 'timeEntries', 'invoices']
+const REMOTE: Record<LocalTable, string> = { clients: 'clients', projects: 'projects', tasks: 'tasks', timeEntries: 'time_entries', invoices: 'invoices' }
 const OUTBOX_KEY = 'taskly.outbox'
 
 let userId: string | null = null
@@ -112,7 +117,7 @@ export function installSyncHooks() {
 
 /** Run cache writes that came from the server without queueing them back. */
 async function applyRemote(tables: LocalTable[] | 'all', fn: () => Promise<void>) {
-  const list = tables === 'all' ? [db.clients, db.projects, db.tasks, db.timeEntries, db.users] : tables.map((t) => db.table(t))
+  const list = tables === 'all' ? [db.clients, db.projects, db.tasks, db.timeEntries, db.invoices, db.users] : tables.map((t) => db.table(t))
   await db.transaction('rw', list, async () => {
     ;(Dexie.currentTransaction as Transaction & { __remote?: boolean }).__remote = true
     await fn()
@@ -147,7 +152,7 @@ export async function flush(): Promise<void> {
     for (const t of ORDER) {
       const ids = [...snapshot.get(t)!.keys()]
       if (!ids.length) continue
-      const found = (await db.table(t).bulkGet(ids)) as (Client | Project | Task | TimeEntry | undefined)[]
+      const found = (await db.table(t).bulkGet(ids)) as (Client | Project | Task | TimeEntry | Invoice | undefined)[]
       const present = found.filter(Boolean)
       const gone = ids.filter((_, i) => !found[i])
       if (gone.length) deletes.push([t, gone])
@@ -191,6 +196,7 @@ async function pushUpserts(t: LocalTable, items: never[], uid: string): Promise<
   }
   if (t === 'clients') return !fail((await sb.from('clients').upsert((items as Client[]).map((c) => clientToRow(c, uid)))).error)
   if (t === 'projects') return !fail((await sb.from('projects').upsert((items as Project[]).map((p) => projectToRow(p, uid)))).error)
+  if (t === 'invoices') return !fail((await sb.from('invoices').upsert((items as Invoice[]).map((x) => invoiceToRow(x, uid)))).error)
   if (t === 'timeEntries') return !fail((await sb.from('time_entries').upsert(orderEntriesForUpsert((items as TimeEntry[]).map((e) => entryToRow(e, uid))))).error)
 
   const tasks = items as Task[]
@@ -228,12 +234,13 @@ export async function pull(): Promise<void> {
   const uid = userId
   useSyncStatus.getState().set({ state: 'syncing' })
   try {
-    const [clients, projects, tasks, subtasks, entries] = await Promise.all([
+    const [clients, projects, tasks, subtasks, entries, invoices] = await Promise.all([
       fetchAll<ClientRow>('clients'),
       fetchAll<ProjectRow>('projects'),
       fetchAll<TaskRow>('tasks'),
       fetchAll<SubtaskRow>('subtasks'),
       fetchAll<TimeEntryRow>('time_entries'),
+      fetchAll<InvoiceRow>('invoices'),
     ])
     let { data: profile } = await supabase.from('profiles').select('*').eq('id', uid).maybeSingle<ProfileRow>()
     if (!profile) {
@@ -258,7 +265,14 @@ export async function pull(): Promise<void> {
       await replace('projects', projects.map(projectFromRow))
       await replace('tasks', tasks.map((r) => taskFromRow(r, subtasks)))
       await replace('timeEntries', entries.map(entryFromRow))
-      if (profile) await db.users.update(uid, { name: profile.name || (await db.users.get(uid))?.name || '', workHours: profileHours(profile) })
+      await replace('invoices', invoices.map(invoiceFromRow))
+      if (profile)
+        await db.users.update(uid, {
+          name: profile.name || (await db.users.get(uid))?.name || '',
+          workHours: profileHours(profile),
+          business: profileBusiness(profile),
+          invoicing: profileInvoicing(profile),
+        })
     })
     await pullPomodoro(uid)
     useSyncStatus.getState().set({ state: 'synced', lastSyncedAt: Date.now() })
@@ -280,7 +294,10 @@ async function onRemote(table: string, p: Change<Record<string, unknown>>) {
   const oldId = (p.old as { id?: string }).id
   if (table === 'profiles') {
     // The users table is not watched by the outbox hooks, so a plain write is fine here.
-    if (p.eventType !== 'DELETE' && row.id === userId) await db.users.update(userId, { name: String(row.name ?? ''), workHours: profileHours(row as unknown as ProfileRow) })
+    if (p.eventType !== 'DELETE' && row.id === userId) {
+      const pr = row as unknown as ProfileRow
+      await db.users.update(userId, { name: String(row.name ?? ''), workHours: profileHours(pr), business: profileBusiness(pr), invoicing: profileInvoicing(pr) })
+    }
     return
   }
   if (table === 'pomodoro_state') return onPomodoroRemote(row)
@@ -315,6 +332,7 @@ async function onRemote(table: string, p: Change<Record<string, unknown>>) {
     if (local === 'clients') await db.clients.put(clientFromRow(row as unknown as ClientRow))
     if (local === 'projects') await db.projects.put(projectFromRow(row as unknown as ProjectRow))
     if (local === 'timeEntries') await db.timeEntries.put(entryFromRow(row as unknown as TimeEntryRow))
+    if (local === 'invoices') await db.invoices.put(invoiceFromRow(row as unknown as InvoiceRow))
     if (local === 'tasks') {
       const existing = await db.tasks.get(id)
       const t = taskFromRow(row as unknown as TaskRow, [])
@@ -330,7 +348,7 @@ async function subscribe(uid: string) {
   // already-subscribed channel throws. Remove any leftover first so each start gets a fresh channel.
   for (const ch of sb.getChannels()) if (ch.topic === `realtime:${name}`) await sb.removeChannel(ch)
   channel = sb.channel(name)
-  const tables = ['profiles', 'clients', 'projects', 'tasks', 'subtasks', 'time_entries', 'pomodoro_state', 'focus_sessions']
+  const tables = ['profiles', 'clients', 'projects', 'tasks', 'subtasks', 'time_entries', 'pomodoro_state', 'focus_sessions', 'invoices']
   for (const table of tables) {
     const filter = table === 'profiles' ? `id=eq.${uid}` : `user_id=eq.${uid}`
     channel.on('postgres_changes' as never, { event: 'INSERT', schema: 'public', table, filter }, (p: Change<Record<string, unknown>>) => void onRemote(table, p))
@@ -376,7 +394,7 @@ async function doStartSync(user: Pick<User, 'id' | 'name' | 'email'>): Promise<v
   if (previous !== user.id) {
     // The cache belongs to someone else (or to the local demo): start clean.
     await applyRemote('all', async () => {
-      await Promise.all([db.clients.clear(), db.projects.clear(), db.tasks.clear(), db.timeEntries.clear()])
+      await Promise.all([db.clients.clear(), db.projects.clear(), db.tasks.clear(), db.timeEntries.clear(), db.invoices.clear()])
     })
     localStorage.setItem('taskly.cacheOwner', user.id)
   }
@@ -408,7 +426,7 @@ export async function stopSync(wipe: boolean): Promise<void> {
   userId = null
   if (wipe && uid) {
     await applyRemote('all', async () => {
-      await Promise.all([db.clients.clear(), db.projects.clear(), db.tasks.clear(), db.timeEntries.clear(), db.users.delete(uid)])
+      await Promise.all([db.clients.clear(), db.projects.clear(), db.tasks.clear(), db.timeEntries.clear(), db.invoices.clear(), db.users.delete(uid)])
     })
     localStorage.removeItem('taskly.cacheOwner')
     localStorage.removeItem(OUTBOX_KEY)

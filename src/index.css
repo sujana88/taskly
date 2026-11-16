@@ -64,3 +64,32 @@ input[type="number"] {
     transition-duration: 0.01ms !important;
   }
 }
+
+/* Invoices: the printable document lives in .print-root (outside #root). On screen it is hidden;
+   when printing, only it is shown, on A4 with the document's own margins. */
+.print-root {
+  display: none;
+}
+
+@media print {
+  @page {
+    size: A4;
+    margin: 0;
+  }
+  html,
+  body {
+    background: #fff !important;
+  }
+  body > *:not(.print-root) {
+    display: none !important;
+  }
+  .print-root {
+    display: block;
+  }
+  .print-root .invoice-doc {
+    min-height: 296mm;
+    max-width: none;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+}

@@ -6,14 +6,20 @@ import {
   clientToRow,
   entryFromRow,
   entryToRow,
+  invoiceFromRow,
+  invoiceToRow,
   iso,
   orderEntriesForUpsert,
   pomodoroFromRow,
   pomodoroToRow,
+  profileBusiness,
+  profileChanges,
+  profileInvoicing,
   subtasksToRows,
   taskFromRow,
   taskToRow,
   uuidFromText,
+  type ProfileRow,
 } from './mappers'
 
 const UID = '11111111-1111-4111-8111-111111111111'
@@ -79,5 +85,31 @@ describe('sync mappers', () => {
     expect(a).toBe(await uuidFromText(`${UID}:1794500000000`))
     expect(a).not.toBe(await uuidFromText(`${UID}:1794500000001`))
     expect(a).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-5[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/)
+  })
+})
+
+describe('invoices and business profile', () => {
+  it('round-trips an invoice through its row (numerics come back as strings)', () => {
+    const inv = {
+      id: 'i1', clientId: 'c1', number: 'INV-2026-001', status: 'sent' as const, issueDate: '2026-11-12', dueDate: '2026-11-26', currency: 'EUR',
+      billToName: 'Nordlicht', billToDetails: 'Lena', items: [{ id: 'l1', description: 'Hero', quantity: 4.17, unitPrice: 45, taskId: 't-hero' }],
+      discount: 10, taxName: 'USt', taxRate: 19, taxKind: 'add' as const, notes: '', periodStart: '2026-11-01', periodEnd: '2026-11-12',
+      sentAt: '2026-11-12T09:00:00.000Z', createdAt: '2026-11-12T08:00:00.000Z',
+    }
+    const row = invoiceToRow(inv, UID)
+    expect(row.user_id).toBe(UID)
+    const back = invoiceFromRow({ ...row, discount: '10.00', tax_rate: '19.00', sent_at: '2026-11-12T09:00:00+00:00', created_at: '2026-11-12T08:00:00+00:00' })
+    expect(back).toEqual(inv)
+  })
+
+  it('maps business details and invoice settings to profile columns and back', () => {
+    const business = { companyName: 'Demo Studio', address: 'Jakarta', email: 'a@b.c', phone: '+62 1', taxId: '01.234', logo: 'data:image/png;base64,AAA' }
+    const invoicing = { prefix: 'INV-', dueDays: 30, notes: 'n', paymentDetails: 'BCA', taxRates: [{ id: 'r', country: 'ID', name: 'PPN', rate: 11, kind: 'add' as const }] }
+    const row = profileChanges({ business, invoicing }) as Record<string, unknown>
+    expect(row).toMatchObject({ company_name: 'Demo Studio', company_logo: 'data:image/png;base64,AAA', invoice_due_days: 30, tax_rates: invoicing.taxRates })
+    const profile = { id: UID, name: 'x', work_start: '09:00:00', work_end: '17:00:00', work_days: [1], ...row } as ProfileRow
+    expect(profileBusiness(profile)).toEqual(business)
+    expect(profileInvoicing(profile)).toEqual(invoicing)
+    expect(profileChanges({ business: { ...business, logo: undefined } }).company_logo).toBeNull()
   })
 })

@@ -97,8 +97,8 @@ export async function ensureDemoUser(db: TasklyDB): Promise<void> {
 }
 
 export async function resetToSample(db: TasklyDB): Promise<void> {
-  await db.transaction('rw', [db.clients, db.projects, db.tasks, db.timeEntries], async () => {
-    await Promise.all([db.clients.clear(), db.projects.clear(), db.tasks.clear(), db.timeEntries.clear()])
+  await db.transaction('rw', [db.clients, db.projects, db.tasks, db.timeEntries, db.invoices], async () => {
+    await Promise.all([db.clients.clear(), db.projects.clear(), db.tasks.clear(), db.timeEntries.clear(), db.invoices.clear()])
   })
   await seedIfEmpty(db)
 }

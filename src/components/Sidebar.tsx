@@ -11,12 +11,15 @@ import { db } from '../db/db'
 import { SyncBadge } from '../sync/SyncUi'
 import { cityOf, formatInZone, isWithinWorkHours, myTimezone } from '../lib/time'
 
-const NAV_ITEMS: { to: string; key: string; icon: AppIconName; end?: boolean }[] = [
+const NAV_ITEMS: { to: string; key: string; icon: AppIconName; end?: boolean; phone?: false }[] = [
   { to: '/', key: 'nav.dashboard', icon: 'today', end: true },
   { to: '/tasks', key: 'nav.tasks', icon: 'tasks' },
   { to: '/focus', key: 'nav.focus', icon: 'focus' },
   { to: '/clients', key: 'nav.clients', icon: 'clients' },
   { to: '/reports', key: 'nav.reports', icon: 'reports' },
+  { to: '/invoices', key: 'nav.invoices', icon: 'invoices' },
+  // On phones Settings sits in the header (gear), keeping the bottom bar to six tabs.
+  { to: '/settings', key: 'nav.settings', icon: 'settings', phone: false },
 ]
 
 const sectionLabel = 'px-3 text-[11px] font-bold tracking-[0.08em] text-slate-400 uppercase'
@@ -64,6 +67,9 @@ export function Sidebar() {
           <div className="flex items-center gap-2 md:hidden">
             <Link to="/profile" className="text-[13px] text-slate-600 no-underline hover:text-accent">{t('nav.hi', { name: firstName })}</Link>
             <LanguageToggle compact />
+            <Link to="/settings" aria-label={t('nav.settings')} title={t('nav.settings')} className="flex size-9 items-center justify-center rounded-xl hover:bg-slate-100">
+              <AppIcon name="settings" size={20} />
+            </Link>
             <button type="button" onClick={logOut} aria-label={t('auth.logout')} title={t('auth.logout')} className="flex size-9 items-center justify-center rounded-xl text-slate-500 hover:bg-slate-100 hover:text-ink">
               <Icon name="logout" size={17} />
             </button>
@@ -176,8 +182,8 @@ export function BottomNav() {
       className="fixed inset-x-0 bottom-0 z-30 border-t border-line bg-white/95 px-2 pt-1.5 pb-[max(6px,env(safe-area-inset-bottom))] shadow-[0_-8px_24px_-12px_rgba(15,23,42,0.18)] backdrop-blur md:hidden"
       data-testid="bottom-nav"
     >
-      <ul className="m-0 grid list-none grid-cols-5 gap-1 p-0">
-        {NAV_ITEMS.map((it) => (
+      <ul className="m-0 grid list-none grid-cols-6 gap-1 p-0">
+        {NAV_ITEMS.filter((it) => it.phone !== false).map((it) => (
           <li key={it.to}>
             <NavLink
               to={it.to}

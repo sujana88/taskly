@@ -51,6 +51,8 @@ test('opens a task, edits it and keeps the change after reload', async ({ page }
   await expect(dialog.getByRole('checkbox')).toHaveCount(6)
   await page.keyboard.press('Escape')
   await expect(dialog).toBeHidden()
+  // Wait until the board shows the saved change, so the reload does not race the IndexedDB write.
+  await expect(card(page, 'Hero section redesign v2')).toContainText('4/6')
   await page.reload()
   await expect(card(page, 'Hero section redesign v2')).toContainText('4/6')
 })
@@ -63,7 +65,8 @@ test('drags a card to another column with the mouse', async ({ page }) => {
   await page.mouse.move(from.x + from.width / 2, from.y + 20)
   await page.mouse.down()
   await page.mouse.move(from.x + from.width / 2 + 30, from.y + 40, { steps: 5 })
-  await page.mouse.move(to.x + to.width / 2, to.y + to.height - 60, { steps: 20 })
+  // Drop well inside the column and away from the bottom edge, where dnd-kit starts auto-scrolling the page.
+  await page.mouse.move(to.x + to.width / 2, to.y + Math.min(to.height - 60, 320), { steps: 20 })
   await page.screenshot({ path: `${shots}/04-dragging.png` })
   await page.mouse.up()
   await expect(column(page, 'in_revision').getByText('Menu photo retouch')).toBeVisible()

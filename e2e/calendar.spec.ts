@@ -36,6 +36,8 @@ test('shows tasks on their due day and moves between months', async ({ page }) =
 
 test('drags a task to another day and keeps the time', async ({ page }) => {
   const chip = day(page, '2026-11-13').getByTestId('calendar-task').filter({ hasText: 'Hero section redesign' })
+  // Keep both days away from the window edges, where dnd-kit auto-scrolls the page mid-drag.
+  await day(page, '2026-11-20').evaluate((el) => el.scrollIntoView({ block: 'center' }))
   const from = (await chip.boundingBox())!
   const to = (await day(page, '2026-11-20').boundingBox())!
   await page.mouse.move(from.x + 20, from.y + from.height / 2)

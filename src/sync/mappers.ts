@@ -2,7 +2,7 @@
  * Converting between the app's records (camelCase, subtasks inside the task) and Supabase rows
  * (snake_case, subtasks in their own table). Pure functions, unit tested.
  */
-import type { Client, Project, Status, Subtask, Task, TimeEntry, WorkHours } from '../db/types'
+import type { Business, Client, Invoice, InvoiceItem, InvoiceSettings, Project, Status, Subtask, Task, TaxRate, TimeEntry, User, WorkHours } from '../db/types'
 import type { PomodoroSettings, PomodoroState } from '../lib/pomodoro'
 
 /** Any timestamp Postgres returns ("…+00:00") as the app's ISO form ("…Z"), so string sorting stays correct. */
@@ -79,6 +79,41 @@ export interface ProfileRow {
   work_start: string
   work_end: string
   work_days: number[]
+  company_name?: string
+  company_address?: string
+  company_email?: string
+  company_phone?: string
+  company_tax_id?: string
+  company_logo?: string | null
+  invoice_prefix?: string
+  invoice_due_days?: number
+  invoice_notes?: string
+  payment_details?: string
+  tax_rates?: TaxRate[]
+}
+
+export interface InvoiceRow {
+  id: string
+  user_id: string
+  client_id: string | null
+  number: string
+  status: Invoice['status']
+  issue_date: string
+  due_date: string
+  currency: string
+  bill_to_name: string
+  bill_to_details: string
+  items: InvoiceItem[]
+  discount: number | string
+  tax_name: string
+  tax_rate: number | string
+  tax_kind: Invoice['taxKind']
+  notes: string
+  period_start: string | null
+  period_end: string | null
+  sent_at: string | null
+  paid_at: string | null
+  created_at: string
 }
 
 export interface PomodoroRow {
@@ -210,6 +245,93 @@ export function entryToRow(e: TimeEntry, userId: string): TimeEntryRow {
 }
 
 export const profileHours = (r: ProfileRow): WorkHours => hours(r)
+
+export function profileBusiness(r: ProfileRow): Business {
+  return {
+    companyName: r.company_name ?? '',
+    address: r.company_address ?? '',
+    email: r.company_email ?? '',
+    phone: r.company_phone ?? '',
+    taxId: r.company_tax_id ?? '',
+    ...(r.company_logo ? { logo: r.company_logo } : {}),
+  }
+}
+
+export function profileInvoicing(r: ProfileRow): InvoiceSettings {
+  return {
+    prefix: r.invoice_prefix ?? 'INV-',
+    dueDays: r.invoice_due_days ?? 14,
+    notes: r.invoice_notes ?? '',
+    paymentDetails: r.payment_details ?? '',
+    taxRates: (r.tax_rates ?? []).map((x) => ({ ...x, rate: Number(x.rate) })),
+  }
+}
+
+/** The profile columns for the parts of a user that changed. */
+export function profileChanges(changes: Partial<Pick<User, 'name' | 'workHours' | 'business' | 'invoicing'>>): Record<string, unknown> {
+  const row: Record<string, unknown> = {}
+  if (changes.name !== undefined) row.name = changes.name
+  if (changes.workHours) Object.assign(row, { work_start: changes.workHours.start, work_end: changes.workHours.end, work_days: changes.workHours.days })
+  const b = changes.business
+  if (b) Object.assign(row, { company_name: b.companyName, company_address: b.address, company_email: b.email, company_phone: b.phone, company_tax_id: b.taxId, company_logo: b.logo ?? null })
+  const s = changes.invoicing
+  if (s) Object.assign(row, { invoice_prefix: s.prefix, invoice_due_days: s.dueDays, invoice_notes: s.notes, payment_details: s.paymentDetails, tax_rates: s.taxRates })
+  return row
+}
+
+/** "2026-11-16" stays as it is; Postgres dates come back the same way. */
+const day = (v: string) => v.slice(0, 10)
+
+export function invoiceFromRow(r: InvoiceRow): Invoice {
+  return {
+    id: r.id,
+    ...(r.client_id ? { clientId: r.client_id } : {}),
+    number: r.number,
+    status: r.status,
+    issueDate: day(r.issue_date),
+    dueDate: day(r.due_date),
+    currency: r.currency,
+    billToName: r.bill_to_name,
+    billToDetails: r.bill_to_details,
+    items: (r.items ?? []).map((it) => ({ ...it, quantity: Number(it.quantity), unitPrice: Number(it.unitPrice) })),
+    discount: Number(r.discount),
+    taxName: r.tax_name,
+    taxRate: Number(r.tax_rate),
+    taxKind: r.tax_kind,
+    notes: r.notes,
+    ...(r.period_start ? { periodStart: day(r.period_start) } : {}),
+    ...(r.period_end ? { periodEnd: day(r.period_end) } : {}),
+    ...(r.sent_at ? { sentAt: iso(r.sent_at) } : {}),
+    ...(r.paid_at ? { paidAt: iso(r.paid_at) } : {}),
+    createdAt: iso(r.created_at),
+  }
+}
+
+export function invoiceToRow(x: Invoice, userId: string): InvoiceRow {
+  return {
+    id: x.id,
+    user_id: userId,
+    client_id: x.clientId ?? null,
+    number: x.number,
+    status: x.status,
+    issue_date: x.issueDate,
+    due_date: x.dueDate,
+    currency: x.currency,
+    bill_to_name: x.billToName,
+    bill_to_details: x.billToDetails,
+    items: x.items,
+    discount: x.discount,
+    tax_name: x.taxName,
+    tax_rate: x.taxRate,
+    tax_kind: x.taxKind,
+    notes: x.notes,
+    period_start: x.periodStart ?? null,
+    period_end: x.periodEnd ?? null,
+    sent_at: x.sentAt ?? null,
+    paid_at: x.paidAt ?? null,
+    created_at: x.createdAt,
+  }
+}
 
 export function pomodoroFromRow(r: PomodoroRow): { settings: PomodoroSettings; state: PomodoroState; taskId: string | null } {
   return {

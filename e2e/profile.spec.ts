@@ -51,9 +51,10 @@ test('profile: change name, hours and password (no old password), then log in wi
 test('profile: working hours are saved to the account', async ({ page }) => {
   await page.addInitScript(() => localStorage.setItem('overlap.session', 'u-demo'))
   await page.goto('/#/profile')
-  await page.getByLabel('Start').fill('08:00')
-  await page.getByRole('button', { name: 'Save' }).nth(1).click()
-  await expect(page.getByText('Saved')).toBeVisible()
+  const hours = page.getByRole('region', { name: 'Your working hours' })
+  await hours.getByLabel('Start').fill('08:00')
+  await hours.getByRole('button', { name: 'Save' }).click()
+  await expect(hours.getByText('Saved')).toBeVisible()
   await page.goto('/#/clients')
   await expect(page.getByText('Your working hours (08:00–17:00)')).toBeVisible()
 })

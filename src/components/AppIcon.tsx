@@ -51,6 +51,24 @@ const icons = {
       <rect x="15.5" y="10" width="3" height="8" rx="1" fill="#EC4899" />
     </>
   ),
+  /** Invoices: a receipt with a coin. */
+  invoices: (
+    <>
+      <path d="M5 2.5h12a1.5 1.5 0 011.5 1.5v17.2l-2.3-1.4-2.3 1.4-2.4-1.4-2.4 1.4-2.3-1.4-2.3 1.4V4A1.5 1.5 0 015 2.5z" fill="#34D399" />
+      <rect x="6.6" y="6" width="8.8" height="1.8" rx=".9" fill="#ECFDF5" />
+      <rect x="6.6" y="9.6" width="6" height="1.8" rx=".9" fill="#ECFDF5" />
+      <circle cx="16.8" cy="16" r="5" fill="#FDB022" stroke="#FFF" strokeWidth="1.2" />
+      <path d="M16.8 13.4v5.2M18.3 14.4c-.3-.5-.9-.7-1.5-.7-.8 0-1.4.4-1.4 1s.6.9 1.4 1.1c.8.2 1.5.5 1.5 1.1s-.6 1-1.5 1c-.6 0-1.3-.3-1.6-.8" fill="none" stroke="#92400E" strokeWidth="1.1" strokeLinecap="round" />
+    </>
+  ),
+  /** Settings: a gear. */
+  settings: (
+    <>
+      <path d="M10.3 2h3.4l.6 2.6 1.6.7 2.3-1.4 2.4 2.4-1.4 2.3.7 1.6 2.6.6v3.4l-2.6.6-.7 1.6 1.4 2.3-2.4 2.4-2.3-1.4-1.6.7-.6 2.6h-3.4l-.6-2.6-1.6-.7-2.3 1.4-2.4-2.4 1.4-2.3-.7-1.6L2 13.7v-3.4l2.6-.6.7-1.6-1.4-2.3 2.4-2.4 2.3 1.4 1.6-.7z" fill="#94A3B8" />
+      <circle cx="12" cy="12" r="4.2" fill="#F1F5F9" />
+      <circle cx="12" cy="12" r="2" fill="#475569" />
+    </>
+  ),
   /** Account: a person. */
   account: (
     <>

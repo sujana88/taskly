@@ -147,7 +147,7 @@ export function TasksPage() {
               value={q}
               onChange={(e) => update({ q: e.target.value })}
               placeholder={t('search.placeholder')}
-              className="w-44 border-none bg-transparent text-sm text-ink outline-none placeholder:text-slate-500"
+              className="w-36 border-none bg-transparent text-sm text-ink outline-none placeholder:text-slate-500"
             />
           </label>
           <label className={ctl}>

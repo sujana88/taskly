@@ -1,8 +1,10 @@
 import i18n from 'i18next'
 import { initReactI18next } from 'react-i18next'
+import { invoicesEn, invoicesId } from './invoices'
 
 const en = {
-  nav: { main: 'Main', profile: 'Profile', hi: 'Hi, {{name}}', menu: 'Menu', dashboard: 'Dashboard', tasks: 'Tasks', focus: 'Focus', clients: 'Clients', reports: 'Reports', settings: 'Settings' },
+  ...invoicesEn,
+  nav: { main: 'Main', profile: 'Profile', hi: 'Hi, {{name}}', menu: 'Menu', dashboard: 'Dashboard', tasks: 'Tasks', focus: 'Focus', clients: 'Clients', reports: 'Reports', invoices: 'Invoices', settings: 'Settings' },
   profile: {
     title: 'Profile',
     cloudAccount: 'Synced account',
@@ -479,7 +481,8 @@ const en = {
 type Dict = typeof en
 
 const id: Dict = {
-  nav: { main: 'Utama', profile: 'Profil', hi: 'Hai, {{name}}', menu: 'Menu', dashboard: 'Dasbor', tasks: 'Tugas', focus: 'Fokus', clients: 'Klien', reports: 'Laporan', settings: 'Pengaturan' },
+  ...invoicesId,
+  nav: { main: 'Utama', profile: 'Profil', hi: 'Hai, {{name}}', menu: 'Menu', dashboard: 'Dasbor', tasks: 'Tugas', focus: 'Fokus', clients: 'Klien', reports: 'Laporan', invoices: 'Invoice', settings: 'Pengaturan' },
   profile: {
     title: 'Profil',
     cloudAccount: 'Akun tersinkron',

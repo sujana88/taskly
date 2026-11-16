@@ -95,7 +95,9 @@ test('phones get a bottom tab bar with every section', async ({ page }) => {
   await page.goto('/#/login')
   await page.getByRole('button', { name: 'Try the demo account' }).click()
   const nav = page.getByTestId('bottom-nav')
-  await expect(nav.getByRole('link')).toHaveCount(5)
+  // Six tabs (Invoices included); Settings is the gear in the phone header.
+  await expect(nav.getByRole('link')).toHaveCount(6)
+  await expect(page.getByRole('link', { name: 'Settings' })).toBeVisible()
   await expect(nav.getByRole('link', { name: 'Dashboard' })).toHaveAttribute('aria-current', 'page')
   await expect(page.getByText('Hi, Demo')).toBeVisible()
   await nav.getByRole('link', { name: 'Reports' }).click()

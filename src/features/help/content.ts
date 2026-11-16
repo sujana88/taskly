@@ -1,7 +1,7 @@
 /** Help centre copy, in English and Indonesian. Both languages must have the same structure (a test checks this). */
 import type { AppIconName } from '../../components/AppIcon'
 
-export type GuideId = 'dashboard' | 'tasks' | 'focus' | 'clients' | 'reports'
+export type GuideId = 'dashboard' | 'tasks' | 'focus' | 'clients' | 'reports' | 'invoices' | 'settings'
 
 export interface HelpContent {
   title: string
@@ -13,9 +13,9 @@ export interface HelpContent {
   shortcuts: { keys: string[]; action: string }[]
 }
 
-export const GUIDE_ORDER: GuideId[] = ['dashboard', 'tasks', 'focus', 'clients', 'reports']
-export const GUIDE_ROUTE: Record<GuideId, string> = { dashboard: '/', tasks: '/tasks', focus: '/focus', clients: '/clients', reports: '/reports' }
-export const GUIDE_ICON: Record<GuideId, AppIconName> = { dashboard: 'today', tasks: 'tasks', focus: 'focus', clients: 'clients', reports: 'reports' }
+export const GUIDE_ORDER: GuideId[] = ['dashboard', 'tasks', 'focus', 'clients', 'reports', 'invoices', 'settings']
+export const GUIDE_ROUTE: Record<GuideId, string> = { dashboard: '/', tasks: '/tasks', focus: '/focus', clients: '/clients', reports: '/reports', invoices: '/invoices', settings: '/settings' }
+export const GUIDE_ICON: Record<GuideId, AppIconName> = { dashboard: 'today', tasks: 'tasks', focus: 'focus', clients: 'clients', reports: 'reports', invoices: 'invoices', settings: 'settings' }
 
 export function guideForPath(path: string): GuideId {
   const hit = GUIDE_ORDER.find((g) => g !== 'dashboard' && path.startsWith(GUIDE_ROUTE[g]))
@@ -88,6 +88,28 @@ const en: HelpContent = {
         'The bar chart shows hours per day; the busiest day is dark blue. The client bars show each client\'s share.',
         'Timesheet: hours × rate per client, in their own currency. Export all entries as CSV or one client as PDF.',
         'Progress update drafts a message from the week\'s work. Edit it, then Copy text or Open in email.',
+      ],
+    },
+    invoices: {
+      title: 'Invoices',
+      summary: 'Bill clients from your tracked time, then print or save as PDF.',
+      points: [
+        "New invoice: pick a client and a period. Billable time on each of their tasks becomes a line: hours × the client's rate.",
+        "The number (e.g. INV-2026-001), due date and tax come from Settings. The client's country (from their time zone) picks the tax rate.",
+        'Edit lines, discount, tax and notes while the invoice is a draft. Changes save by themselves.',
+        'Mark as sent locks the invoice. Mark as paid when the money arrives; sent invoices past their due date show as Overdue.',
+        'Print / Save PDF opens the print window: pick your printer, or "Save as PDF" to get a file to email to the client.',
+        'Taskly warns you when part of the period is already billed in another invoice for the same client.',
+      ],
+    },
+    settings: {
+      title: 'Settings',
+      summary: 'Tax rates per country and invoice defaults.',
+      points: [
+        'Tax rates: add one per country, e.g. PPN 11% for Indonesia or GST 10% for Australia. Quick add offers common rates; check them first.',
+        'Type: Added taxes (VAT, PPN, GST) go on top of the subtotal. Withheld taxes (e.g. PPh 23) are deducted by the client.',
+        'Invoice defaults: number prefix, payment terms in days, payment details (bank account) and default notes.',
+        'Your company name, address, tax ID and logo are on the Profile page, under Business details.',
       ],
     },
   },
@@ -203,6 +225,28 @@ const id: HelpContent = {
         'Grafik batang menampilkan jam per hari; hari tersibuk berwarna biru tua. Batang klien menunjukkan porsi tiap klien.',
         'Timesheet: jam × tarif per klien, dalam mata uang masing-masing. Ekspor semua catatan ke CSV atau satu klien ke PDF.',
         'Progress update menyusun pesan dari pekerjaan minggu ini. Edit, lalu Salin teks atau Buka di email.',
+      ],
+    },
+    invoices: {
+      title: 'Invoice',
+      summary: 'Tagih klien dari waktu kerja yang tercatat, lalu cetak atau simpan sebagai PDF.',
+      points: [
+        'Invoice baru: pilih klien dan periode. Waktu yang bisa ditagih di setiap tugas klien menjadi satu baris: jam × tarif klien.',
+        'Nomor (mis. INV-2026-001), jatuh tempo dan pajak diambil dari Pengaturan. Negara klien (dari zona waktunya) menentukan tarif pajak.',
+        'Ubah rincian, diskon, pajak dan catatan selama invoice masih draf. Perubahan tersimpan otomatis.',
+        'Tandai terkirim mengunci invoice. Tandai lunas saat pembayaran masuk; invoice terkirim yang lewat jatuh tempo tampil sebagai Lewat jatuh tempo.',
+        'Cetak / Simpan PDF membuka jendela cetak: pilih printer, atau "Simpan sebagai PDF" untuk mendapatkan file yang bisa dikirim ke klien.',
+        'Taskly memberi peringatan bila sebagian periode sudah ditagih di invoice lain untuk klien yang sama.',
+      ],
+    },
+    settings: {
+      title: 'Pengaturan',
+      summary: 'Tarif pajak per negara dan pengaturan invoice.',
+      points: [
+        'Tarif pajak: tambahkan per negara, mis. PPN 11% untuk Indonesia atau GST 10% untuk Australia. Tambah cepat menawarkan tarif umum; periksa dulu.',
+        'Jenis: pajak Ditambahkan (PPN, VAT, GST) dihitung di atas subtotal. Pajak Dipotong (mis. PPh 23) dikurangkan oleh klien.',
+        'Pengaturan invoice: awalan nomor, jangka waktu bayar dalam hari, info pembayaran (rekening bank) dan catatan bawaan.',
+        'Nama perusahaan, alamat, NPWP dan logo diatur di halaman Profil, bagian Data usaha.',
       ],
     },
   },

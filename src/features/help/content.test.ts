@@ -13,7 +13,7 @@ describe('help content', () => {
   })
 
   it('opens the guide for the page you are on', () => {
-    expect(['/', '/tasks', '/focus', '/clients', '/reports', '/anything'].map(guideForPath)).toEqual(['dashboard', 'tasks', 'focus', 'clients', 'reports', 'dashboard'])
+    expect(['/', '/tasks', '/focus', '/clients', '/reports', '/invoices/abc', '/settings', '/anything'].map(guideForPath)).toEqual(['dashboard', 'tasks', 'focus', 'clients', 'reports', 'invoices', 'settings', 'dashboard'])
   })
 
   it('searches every section, all words, ignoring case and accents', () => {
