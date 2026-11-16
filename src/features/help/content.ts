@@ -100,6 +100,7 @@ const en: HelpContent = {
         'Mark as sent locks the invoice. Mark as paid when the money arrives; sent invoices past their due date show as Overdue.',
         'Print / Save PDF opens the print window: pick your printer, or "Save as PDF" to get a file to email to the client.',
         'Taskly warns you when part of the period is already billed in another invoice for the same client.',
+        'Send via WhatsApp (green button) works when the client has a phone number and your Business details have yours. Send a polite message with every line and the total, or an image of the invoice.',
       ],
     },
     settings: {
@@ -237,6 +238,7 @@ const id: HelpContent = {
         'Tandai terkirim mengunci invoice. Tandai lunas saat pembayaran masuk; invoice terkirim yang lewat jatuh tempo tampil sebagai Lewat jatuh tempo.',
         'Cetak / Simpan PDF membuka jendela cetak: pilih printer, atau "Simpan sebagai PDF" untuk mendapatkan file yang bisa dikirim ke klien.',
         'Taskly memberi peringatan bila sebagian periode sudah ditagih di invoice lain untuk klien yang sama.',
+        'Kirim lewat WhatsApp (tombol hijau) aktif bila klien punya nomor HP dan nomor Anda ada di Data usaha. Kirim pesan sopan berisi semua rincian dan total, atau gambar invoice.',
       ],
     },
     settings: {

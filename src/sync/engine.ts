@@ -323,6 +323,12 @@ async function onRemote(table: string, p: Change<Record<string, unknown>>) {
     return
   }
 
+  // A currency code that is not 3 letters means a truncated Realtime payload (old char(3) columns):
+  // re-read the account instead of caching a broken value.
+  if ((table === 'clients' || table === 'invoices') && typeof row.currency === 'string' && row.currency.trim().length !== 3) {
+    void pull()
+    return
+  }
   const local: LocalTable | undefined = table === 'time_entries' ? 'timeEntries' : (table as LocalTable)
   if (!ORDER.includes(local)) return
   const id = (row.id as string | undefined) ?? oldId

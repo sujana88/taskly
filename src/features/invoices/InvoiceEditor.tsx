@@ -14,6 +14,7 @@ import { useCurrentUser } from '../auth/useCurrentUser'
 import { billToDetails, deleteInvoice, newItem, saveInvoice, setInvoiceStatus, timeItems } from './actions'
 import { InvoiceDocument, PrintPortal } from './InvoiceDocument'
 import { StatusBadge } from './InvoicesPage'
+import { WhatsAppPanel } from './WhatsAppPanel'
 
 const field = 'min-h-11 w-full min-w-0 rounded-[10px] border border-line bg-white px-3 text-[15px] outline-none focus:border-accent disabled:bg-slate-50 disabled:text-slate-600'
 const label = 'text-[13px] font-semibold text-slate-700'
@@ -100,6 +101,16 @@ function Editor({ stored }: { stored: Invoice }) {
     if (status !== 'draft') setMode('preview')
     else setMode('edit')
   }
+
+  const whatsApp = (
+    <WhatsAppPanel
+      invoice={draft}
+      client={clients?.find((c) => c.id === draft.clientId)}
+      user={user}
+      settings={settings}
+      onMarkSent={valid ? () => void changeStatus('sent') : undefined}
+    />
+  )
 
   const actionBtn = 'flex min-h-10 items-center gap-2 rounded-[10px] border border-line bg-white px-3.5 text-sm font-semibold hover:bg-slate-50'
 
@@ -210,11 +221,14 @@ function Editor({ stored }: { stored: Invoice }) {
       )}
 
       {mode === 'preview' ? (
-        <div className="overflow-x-auto rounded-2xl bg-slate-200/70 p-3 sm:p-6">
-          <div className="mx-auto w-[210mm] shadow-xl">
-            <InvoiceDocument invoice={draft} business={user?.business} senderName={user?.name ?? ''} settings={settings} />
+        <>
+          <div className="overflow-x-auto rounded-2xl bg-slate-200/70 p-3 sm:p-6">
+            <div className="mx-auto w-[210mm] shadow-xl">
+              <InvoiceDocument invoice={draft} business={user?.business} senderName={user?.name ?? ''} settings={settings} />
+            </div>
           </div>
-        </div>
+          {whatsApp}
+        </>
       ) : (
         <div className="grid items-start gap-5 xl:grid-cols-[minmax(0,1fr)_340px]">
           <div className="flex min-w-0 flex-col gap-5">
@@ -329,6 +343,8 @@ function Editor({ stored }: { stored: Invoice }) {
               </label>
               <textarea id={ids.notes} disabled={locked} value={draft.notes} maxLength={2000} rows={3} onChange={(e) => set({ notes: e.target.value })} className={`${field} py-2.5 leading-relaxed`} />
             </section>
+
+            {whatsApp}
           </div>
 
           <aside className="card flex flex-col gap-4 p-5 xl:sticky xl:top-6" aria-labelledby="details-h">
