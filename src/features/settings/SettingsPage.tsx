@@ -239,10 +239,25 @@ function InvoiceDefaults({ user, settings }: { user: User; settings: InvoiceSett
         </div>
       </div>
       <div className="flex flex-col gap-1.5">
-        <label htmlFor={ids.payment} className={label}>
-          {t('settings.paymentDetails')}
-        </label>
-        <textarea id={ids.payment} value={payment} maxLength={1000} rows={3} onChange={(e) => touch(setPayment)(e.target.value)} className={`${input} py-2.5 leading-relaxed`} />
+        <div className="flex items-end justify-between gap-2">
+          <label htmlFor={ids.payment} className={label}>
+            {t('settings.paymentDetails')}
+          </label>
+          {!payment.trim() && (
+            <button type="button" onClick={() => touch(setPayment)(t('settings.paymentExample'))} className="text-[13px] font-semibold text-accent hover:underline">
+              {t('settings.useExample')}
+            </button>
+          )}
+        </div>
+        <textarea
+          id={ids.payment}
+          value={payment}
+          maxLength={1000}
+          rows={4}
+          placeholder={t('settings.paymentExample')}
+          onChange={(e) => touch(setPayment)(e.target.value)}
+          className={`${input} py-2.5 leading-relaxed placeholder:text-slate-400`}
+        />
         <p className="m-0 text-[13px] text-muted">{t('settings.paymentDetailsHint')}</p>
       </div>
       <div className="flex flex-col gap-1.5">
@@ -267,7 +282,7 @@ function InvoiceDefaults({ user, settings }: { user: User; settings: InvoiceSett
   )
 }
 
-const UNIT_SUGGESTIONS = ['Hour', 'Day', 'Week', 'Month', 'Pcs', 'Project', 'Page', 'Word']
+const UNIT_SUGGESTIONS = ['Day', 'Week', 'Month', 'Pcs', 'Page', 'Word']
 
 /** The units offered on invoice lines ("Hour", "Pcs"…), defined by the user. */
 function UnitsSection({ user, settings }: { user: User; settings: InvoiceSettings }) {

@@ -13,7 +13,7 @@ import { localeFor } from './time'
 /** Currencies without everyday cents. Keep in step with currency.ts. */
 const NO_CENTS = new Set(['IDR', 'JPY', 'KRW', 'VND', 'CLP', 'ISK'])
 
-export const DEFAULT_UNITS = ['Hour', 'Pcs']
+export const DEFAULT_UNITS = ['Hours', 'Project']
 export const DEFAULT_INVOICING: InvoiceSettings = { prefix: 'INV-', dueDays: 14, notes: '', paymentDetails: '', taxRates: [], units: DEFAULT_UNITS }
 
 /** Settings saved before units existed get the defaults. */

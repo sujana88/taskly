@@ -24,6 +24,7 @@ export function InvoiceDocument({ invoice: inv, business, senderName, settings }
   const totals = invoiceTotals(inv)
   const company = business?.companyName.trim() || senderName
   const items = inv.items.filter((it) => it.description.trim() || it.quantity * it.unitPrice !== 0)
+  const payLines = settings.paymentDetails.split('\n').map((l) => l.trim()).filter(Boolean)
   const stamp = inv.status === 'paid' ? t('invoices.doc.paid') : inv.status === 'void' ? t('invoices.doc.void') : null
 
   return (
@@ -146,26 +147,33 @@ export function InvoiceDocument({ invoice: inv, business, senderName, settings }
         </dl>
       </div>
 
-      {(settings.paymentDetails || inv.notes) && (
-        <section className="grid grid-cols-2 gap-8 break-inside-avoid">
-          {settings.paymentDetails ? (
-            <div className="flex flex-col gap-1">
-              <span className="text-[11px] font-semibold tracking-wide text-blue-700 uppercase">{t('invoices.doc.paymentDetails')}</span>
-              <span className="whitespace-pre-line">{settings.paymentDetails}</span>
-            </div>
-          ) : (
-            <span />
-          )}
-          {inv.notes && (
-            <div className="flex flex-col gap-1">
-              <span className="text-[11px] font-semibold tracking-wide text-blue-700 uppercase">{t('invoices.doc.notes')}</span>
-              <span className="whitespace-pre-line">{inv.notes}</span>
-            </div>
-          )}
+      {inv.notes && (
+        <section className="flex max-w-[120mm] flex-col gap-1 break-inside-avoid">
+          <span className="text-[11px] font-semibold tracking-wide text-blue-700 uppercase">{t('invoices.doc.notes')}</span>
+          <span className="whitespace-pre-line">{inv.notes}</span>
         </section>
       )}
 
-      <footer className="mt-auto border-t border-slate-200 pt-3 text-center text-[11px] text-slate-500">{t('invoices.doc.thanks')}</footer>
+      {/* Bottom of the page: where to pay on the left, a handwritten thank-you on the right. */}
+      <footer className="mt-auto flex items-end justify-between gap-8 pt-4 break-inside-avoid">
+        {payLines.length > 0 ? (
+          <div className="max-w-[100mm] rounded-xl bg-blue-50 px-5 py-4 leading-relaxed text-slate-800" data-testid="doc-pay-to">
+            <strong className="block text-slate-900">
+              {t('invoices.doc.payTo')}: {payLines[0]}
+            </strong>
+            {payLines.slice(1).map((line, i) => (
+              <span key={i} className="block">
+                {line}
+              </span>
+            ))}
+          </div>
+        ) : (
+          <span />
+        )}
+        <span className="shrink-0 pr-2 pb-1 font-[Allura,cursive] text-[46px] leading-none text-slate-700" data-testid="doc-thanks">
+          {t('invoices.doc.thanks')}
+        </span>
+      </footer>
     </article>
   )
 }

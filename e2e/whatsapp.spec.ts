@@ -62,7 +62,7 @@ test('sends a polite message with the details, then offers to mark it as sent', 
   const message = panel.getByTestId('wa-message')
   // A Berlin client gets English; every line, the total and the signature are in.
   await expect(message).toHaveValue(/^Hello Lena,\n\nI hope you are doing well\. Please find below the details of invoice \*INV-2026-001\* from Demo Design Studio\./)
-  await expect(message).toHaveValue(/Hero section redesign \(Website refresh\)\n {3}4,17 Hour × € 45 = € 187,65/)
+  await expect(message).toHaveValue(/Hero section redesign \(Website refresh\)\n {3}4,17 Hours × € 45 = € 187,65/)
   await expect(message).toHaveValue(/\*Total due: € [\d.,]+\*/)
   await expect(message).toHaveValue(/Kind regards,\nDemo Freelancer\nDemo Design Studio\n\+62 812 3456 7890$/)
   await panel.scrollIntoViewIfNeeded()
