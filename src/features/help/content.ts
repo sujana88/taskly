@@ -68,6 +68,9 @@ const en: HelpContent = {
         'After each focus session comes a short break; after every fourth, a long break. Skip moves on without counting the session.',
         'Change the lengths in Settings (minutes). Turn on desktop notifications to be told when a phase ends.',
         'The timer keeps going on other pages and after a reload. The sidebar shows it on every page.',
+        'Two timers: Standard counts up with no breaks (the same timer as Start timer in a task); Pomodoro works in focus blocks with breaks. Whichever runs shows on the dashboard card "Active timer".',
+        'Forgotten timers are caught: after 3 hours (and when your workday ends) Taskly asks "Still working?", it asks what to do with time while the app was closed or asleep, and after 12 hours it stops the timer and marks the time "check" (not billed). Change the limits in Settings → Timer.',
+        'Worked without the timer? In the task, use Add time manually: pick the day, start time and duration, and add a note.',
       ],
     },
     clients: {
@@ -207,6 +210,9 @@ const id: HelpContent = {
         'Setiap sesi fokus diikuti istirahat pendek; setiap sesi keempat diikuti istirahat panjang. Lewati berpindah tanpa menghitung sesi.',
         'Ubah durasi di Pengaturan (menit). Aktifkan notifikasi desktop agar diberi tahu saat fase berakhir.',
         'Timer tetap berjalan di halaman lain dan setelah halaman dimuat ulang. Sidebar menampilkannya di setiap halaman.',
+        'Dua jenis timer: Standar menghitung naik tanpa istirahat (sama dengan Mulai timer di tugas); Pomodoro bekerja dalam blok fokus dengan istirahat. Mana pun yang berjalan tampil di kartu dasbor "Timer aktif".',
+        'Timer yang terlupa tertangkap: setelah 3 jam (dan saat jam kerja selesai) Taskly bertanya "Masih bekerja?", bertanya soal waktu ketika aplikasi tertutup atau perangkat tidur, dan setelah 12 jam timer berhenti sendiri dengan tanda "perlu dicek" (tidak ditagihkan). Atur batasnya di Pengaturan → Timer.',
+        'Bekerja tanpa timer? Di tugas, pakai Tambah waktu manual: pilih tanggal, jam mulai dan durasi, lalu tambahkan catatan.',
       ],
     },
     clients: {

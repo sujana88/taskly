@@ -14,7 +14,10 @@ import { WeekBars } from '../reports/WeekBars'
 import { updateTask } from '../tasks/actions'
 import { ClientChip } from '../tasks/TaskCard'
 import { useTaskData } from '../tasks/useTaskData'
-import { pausePomodoro, startPomodoro } from '../timer/controller'
+import { pausePomodoro, startPomodoro, startTaskTimer, stopTaskTimer } from '../timer/controller'
+import { entryMs } from '../timer/actions'
+import { useRunningEntry } from '../timer/useRunningEntry'
+import { cleanGuard, guardable } from '../../lib/timerGuard'
 import { usePomodoro } from '../timer/store'
 import { EmptyAccountBanner } from '../../sync/SyncUi'
 
@@ -290,14 +293,20 @@ const PHASE_LOOK = {
 } as const
 
 function FocusWidget() {
-  const { t } = useTranslation()
   // Its own one-second clock: the rest of the dashboard only refreshes every 30 seconds.
   const now = useNow(1000)
   const data = useTaskData()
   const { state, settings, taskId } = usePomodoro()
+  const active = useRunningEntry()
+  if (guardable(active)) return <StandardWidget entryId={active.id} taskId={active.taskId} startedAt={active.startedAt} now={now} />
+  return <PomodoroWidget now={now} state={state} settings={settings} taskId={taskId} taskTitle={data.tasks.find((x) => x.id === taskId)?.title} />
+}
+
+function PomodoroWidget({ now, state, settings, taskId, taskTitle }: { now: number; state: ReturnType<typeof usePomodoro.getState>['state']; settings: ReturnType<typeof usePomodoro.getState>['settings']; taskId: string | null; taskTitle?: string }) {
+  const { t } = useTranslation()
   const left = remaining(state, now)
   const total = durationMs(state.phase, settings)
-  const task = taskId ? data.tasks.find((x) => x.id === taskId) : undefined
+  const task = taskId && taskTitle ? { id: taskId, title: taskTitle } : undefined
   const running = state.status === 'running'
   const look = PHASE_LOOK[state.phase]
   const onBreak = state.phase !== 'focus'
@@ -348,6 +357,84 @@ function FocusWidget() {
               className="flex size-12 items-center justify-center rounded-full bg-accent text-white shadow-[0_10px_24px_-8px_rgba(59,130,246,0.9)] hover:bg-blue-500"
             >
               <Icon name={running ? 'pause' : 'play'} size={16} />
+            </button>
+            {state.status === 'idle' && task && (
+              <button
+                type="button"
+                onClick={() => void startTaskTimer(task.id)}
+                aria-label={t('dash.active.startStandard', { task: task.title })}
+                title={t('dash.active.startStandard', { task: task.title })}
+                className="flex size-12 items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20"
+                data-testid="widget-start-standard"
+              >
+                <Icon name="clock" size={18} />
+              </button>
+            )}
+            <Link to="/focus" aria-label={t('timer.openFocus')} className="flex size-12 items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20">
+              <Icon name="focus" size={18} />
+            </Link>
+          </div>
+        </div>
+      </div>
+    </section>
+  )
+}
+
+/** A standard (count-up) timer is running: show what, for which client, for how long, and Stop. */
+function StandardWidget({ entryId, taskId, startedAt, now }: { entryId: string; taskId: string; startedAt: string; now: number }) {
+  const { t } = useTranslation()
+  const data = useTaskData()
+  const user = useCurrentUser()
+  const guard = cleanGuard(user?.timerGuard)
+  const task = data.allTasks.find((x) => x.id === taskId)
+  const client = task ? data.clientFor(task) : undefined
+  const ms = entryMs({ startedAt }, now)
+  const long = ms >= guard.remindHours * 36e5
+  const r = 52
+  const c = 2 * Math.PI * r
+  const hourProgress = (ms % 36e5) / 36e5
+  return (
+    <section className="relative flex flex-col justify-between gap-4 overflow-hidden rounded-[28px] bg-slate-900 p-6 text-white xl:col-span-4" aria-labelledby="focus-w-h" data-testid="active-standard" data-entry={entryId}>
+      <div className={`pointer-events-none absolute -right-12 -bottom-12 size-48 rounded-full blur-2xl ${long ? 'bg-amber-500/30' : 'bg-accent/30'}`} aria-hidden="true" />
+      <div className="relative flex flex-wrap items-center justify-between gap-2">
+        <h2 id="focus-w-h" className="m-0 text-[15px] font-bold">
+          {t('dash.active.title')}
+        </h2>
+        <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-bold uppercase ${long ? 'bg-amber-400/15 text-amber-300' : 'bg-blue-400/15 text-blue-300'}`} data-testid="widget-phase">
+          <span className="size-1.5 animate-pulse rounded-full bg-current" aria-hidden="true" />
+          {t('focus.mode.standard')} · {t('dash.widget.running')}
+        </span>
+      </div>
+      <div className="relative flex items-center gap-5">
+        <div className="relative size-[124px] shrink-0">
+          <svg viewBox="0 0 124 124" className="size-full -rotate-90" aria-hidden="true">
+            <circle cx="62" cy="62" r={r} fill="none" strokeWidth="8" className="stroke-white/10" />
+            <circle cx="62" cy="62" r={r} fill="none" strokeWidth="8" strokeLinecap="round" strokeDasharray={c} strokeDashoffset={c * (1 - hourProgress)} className={`${long ? 'stroke-amber-400' : 'stroke-blue-400'} transition-[stroke-dashoffset] duration-1000 ease-linear`} />
+          </svg>
+          <div className="absolute inset-0 flex flex-col items-center justify-center">
+            <span className="text-[24px] leading-none font-extrabold tracking-tight tabular-nums" role="timer" data-testid="widget-clock">
+              {formatClock(ms)}
+            </span>
+            <span className={`mt-1.5 text-[10px] font-bold tracking-wider uppercase ${long ? 'text-amber-300' : 'text-blue-300'}`} aria-hidden="true">
+              {t('dash.active.elapsed')}
+            </span>
+          </div>
+        </div>
+        <div className="flex min-w-0 flex-col gap-2.5">
+          <span className="line-clamp-2 text-[15px] font-semibold text-white" data-testid="widget-task">
+            {task?.title ?? '—'}
+          </span>
+          {client && (
+            <span className="inline-flex items-center gap-1.5 self-start rounded-full bg-white/10 px-2.5 py-1 text-xs font-semibold text-slate-200">
+              <span className="size-1.5 rounded-full" style={{ backgroundColor: client.color }} aria-hidden="true" />
+              {client.name}
+            </span>
+          )}
+          {long && <span className="text-xs text-amber-300">{t('dash.active.long', { hours: guard.remindHours })}</span>}
+          <div className="flex gap-2">
+            <button type="button" onClick={() => void stopTaskTimer()} className="flex min-h-12 items-center gap-2 rounded-full bg-white px-5 text-sm font-bold text-slate-900 hover:bg-slate-100" data-testid="widget-stop">
+              <Icon name="stop" size={12} />
+              {t('timer.stop')}
             </button>
             <Link to="/focus" aria-label={t('timer.openFocus')} className="flex size-12 items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20">
               <Icon name="focus" size={18} />

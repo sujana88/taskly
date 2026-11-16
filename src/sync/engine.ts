@@ -23,6 +23,7 @@ import {
   invoiceToRow,
   profileBusiness,
   profileInvoicing,
+  profileTimerGuard,
   orderEntriesForUpsert,
   profileHours,
   projectFromRow,
@@ -272,6 +273,7 @@ export async function pull(): Promise<void> {
           workHours: profileHours(profile),
           business: profileBusiness(profile),
           invoicing: profileInvoicing(profile),
+          timerGuard: profileTimerGuard(profile),
         })
     })
     await pullPomodoro(uid)
@@ -296,7 +298,7 @@ async function onRemote(table: string, p: Change<Record<string, unknown>>) {
     // The users table is not watched by the outbox hooks, so a plain write is fine here.
     if (p.eventType !== 'DELETE' && row.id === userId) {
       const pr = row as unknown as ProfileRow
-      await db.users.update(userId, { name: String(row.name ?? ''), workHours: profileHours(pr), business: profileBusiness(pr), invoicing: profileInvoicing(pr) })
+      await db.users.update(userId, { name: String(row.name ?? ''), workHours: profileHours(pr), business: profileBusiness(pr), invoicing: profileInvoicing(pr), timerGuard: profileTimerGuard(pr) })
     }
     return
   }

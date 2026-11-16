@@ -143,7 +143,7 @@ export function logOut(): void {
   useSession.getState().setUserId(null)
 }
 
-export async function updateProfile(id: string, changes: Partial<Pick<User, 'name' | 'workHours' | 'business' | 'invoicing'>>): Promise<void> {
+export async function updateProfile(id: string, changes: Partial<Pick<User, 'name' | 'workHours' | 'business' | 'invoicing' | 'timerGuard'>>): Promise<void> {
   await db.users.update(id, changes)
   if (BACKEND === 'supabase') await (await cloud()).cloudUpdateProfile(id, changes)
 }

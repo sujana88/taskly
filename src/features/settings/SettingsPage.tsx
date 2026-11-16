@@ -5,6 +5,7 @@ import { Icon } from '../../components/Icon'
 import type { InvoiceSettings, TaxKind, TaxRate, User } from '../../db/types'
 import { DEFAULT_INVOICING, cleanUnits, nextInvoiceNumber, parseAmount, unitOption, unitsOf, validTaxRate } from '../../lib/invoice'
 import { countryForZone, countryOptions } from '../../lib/phone'
+import { GUARD_LIMITS, cleanGuard, type TimerGuard } from '../../lib/timerGuard'
 import { myTimezone } from '../../lib/time'
 import { updateProfile } from '../auth/auth'
 import { primaryBtn } from '../auth/fields'
@@ -66,6 +67,7 @@ export function SettingsPage() {
         <TaxSection user={user} settings={settings} />
         <div className="flex flex-col gap-5">
           <UnitsSection user={user} settings={settings} />
+          <TimerSection user={user} />
           <InvoiceDefaults user={user} settings={settings} />
           <p className="m-0 flex flex-wrap items-center gap-2 rounded-2xl bg-slate-50 px-4 py-3 text-sm text-slate-700">
             {t('settings.businessLink')}
@@ -385,6 +387,63 @@ function UnitsSection({ user, settings }: { user: User; settings: InvoiceSetting
         className={`${primaryBtn} sm:w-auto sm:self-start sm:px-6`}
       >
         {t('settings.saveUnits')}
+      </button>
+    </Section>
+  )
+}
+
+/** Forgotten-timer safety: when to ask "still working?", when to ask about idle time, when to stop. */
+function TimerSection({ user }: { user: User }) {
+  const { t } = useTranslation()
+  const saved = cleanGuard(user.timerGuard)
+  const [form, setForm] = useState<Record<keyof TimerGuard, string>>({ remindHours: String(saved.remindHours), idleMinutes: String(saved.idleMinutes), maxHours: String(saved.maxHours) })
+  const [done, setDone] = useState(false)
+  const ids = { remindHours: useId(), idleMinutes: useId(), maxHours: useId() }
+  const next = cleanGuard({ remindHours: Number(form.remindHours), idleMinutes: Number(form.idleMinutes), maxHours: Number(form.maxHours) })
+  const changed = JSON.stringify(next) !== JSON.stringify(saved)
+  const field = (key: keyof TimerGuard, unit: string) => (
+    <div className="flex flex-col gap-1.5">
+      <label htmlFor={ids[key]} className={label}>
+        {t(`settings.timer.${key}`)}
+      </label>
+      <div className="flex items-center gap-2">
+        <input
+          id={ids[key]}
+          type="number"
+          inputMode="numeric"
+          min={GUARD_LIMITS[key][0]}
+          max={GUARD_LIMITS[key][1]}
+          value={form[key]}
+          onChange={(e) => {
+            setForm((f) => ({ ...f, [key]: e.target.value }))
+            setDone(false)
+          }}
+          className={`${input} tabular-nums`}
+        />
+        <span className="shrink-0 text-xs text-muted">{unit}</span>
+      </div>
+    </div>
+  )
+  return (
+    <Section id="timer-h" title={t('settings.timer.title')} subtitle={t('settings.timer.body')}>
+      <div className="grid gap-3 sm:grid-cols-3">
+        {field('remindHours', t('settings.timer.hoursUnit'))}
+        {field('idleMinutes', t('settings.timer.minutesUnit'))}
+        {field('maxHours', t('settings.timer.hoursUnit'))}
+      </div>
+      <p className="m-0 text-[13px] text-muted">{t('settings.timer.hint', { remind: next.remindHours, idle: next.idleMinutes, max: next.maxHours })}</p>
+      <Saved show={done} text={t('settings.saved')} />
+      <button
+        type="button"
+        disabled={!changed}
+        onClick={async () => {
+          await updateProfile(user.id, { timerGuard: next })
+          setForm({ remindHours: String(next.remindHours), idleMinutes: String(next.idleMinutes), maxHours: String(next.maxHours) })
+          setDone(true)
+        }}
+        className={`${primaryBtn} sm:w-auto sm:self-start sm:px-6`}
+      >
+        {t('settings.timer.save')}
       </button>
     </Section>
   )

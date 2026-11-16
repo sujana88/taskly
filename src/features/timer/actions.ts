@@ -35,13 +35,25 @@ export async function stopEntry(at = Date.now()): Promise<void> {
   await db.transaction('rw', db.timeEntries, () => closeOpen(at))
 }
 
-/** Log time after the fact, ending at `endAt`. */
-export async function addManualEntry(taskId: string, minutes: number, endAt = Date.now()): Promise<string | undefined> {
-  const mins = Math.round(minutes)
-  if (!Number.isFinite(mins) || mins <= 0) return undefined
+/** Log time after the fact: from `start` to `end` (any day), with an optional note. */
+export async function addManualEntry(taskId: string, start: number, end: number, note?: string): Promise<string | undefined> {
+  if (!Number.isFinite(start) || !Number.isFinite(end) || end <= start) return undefined
   const id = crypto.randomUUID()
-  await db.timeEntries.add({ id, taskId, startedAt: iso(endAt - mins * 60_000), endedAt: iso(endAt), source: 'manual', billable: true })
+  const text = note?.trim().slice(0, 2000)
+  await db.timeEntries.add({ id, taskId, startedAt: iso(start), endedAt: iso(end), source: 'manual', billable: true, ...(text ? { note: text } : {}) })
   return id
+}
+
+/** A forgotten timer: stop it at `at` and mark it for review (left out of invoices until checked). */
+export async function capEntry(id: string, at: number): Promise<void> {
+  const e = await db.timeEntries.get(id)
+  if (!e || e.endedAt) return
+  await db.timeEntries.update(id, { endedAt: iso(Math.max(at, Date.parse(e.startedAt) + MIN_ENTRY_MS)), needsReview: true })
+}
+
+/** The user looked at an automatically stopped entry: it counts again. */
+export async function markChecked(id: string): Promise<void> {
+  await db.timeEntries.update(id, { needsReview: undefined })
 }
 
 export async function deleteEntry(id: string): Promise<void> {

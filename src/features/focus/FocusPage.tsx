@@ -1,16 +1,20 @@
 import { useEffect, useId, useMemo, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useSearchParams } from 'react-router-dom'
 import { Icon } from '../../components/Icon'
 import { useNow } from '../../hooks/useNow'
 import { PHASES, clampSetting, durationMs, remaining, sessionNumber, type LIMITS, type Phase } from '../../lib/pomodoro'
-import { formatClock, formatMinutes } from '../../lib/time'
+import { formatClock, formatInZone, formatMinutes, myTimezone } from '../../lib/time'
+import { cleanGuard, guardable } from '../../lib/timerGuard'
+import { useCurrentUser } from '../auth/useCurrentUser'
 import { ClientChip } from '../tasks/TaskCard'
 import { useTaskData } from '../tasks/useTaskData'
 import { entryMs } from '../timer/actions'
 import { notificationsSupported } from '../timer/alerts'
-import { choosePhase, pausePomodoro, resetPomodoro, setPomodoroTask, skipPhase, startPomodoro } from '../timer/controller'
-import { localDay, usePomodoro } from '../timer/store'
+import { choosePhase, pausePomodoro, resetPomodoro, setPomodoroTask, skipPhase, startPomodoro, startTaskTimer, stopTaskTimer } from '../timer/controller'
+import { localDay, useFocusMode, usePomodoro, type FocusMode } from '../timer/store'
+import { useRunningEntry } from '../timer/useRunningEntry'
 
 const RING: Record<Phase, string> = { focus: 'stroke-accent', short: 'stroke-green-600', long: 'stroke-sky-600' }
 const CHIP: Record<Phase, string> = { focus: 'bg-accent-soft text-accent-strong', short: 'bg-green-100 text-green-800', long: 'bg-sky-100 text-sky-800' }
@@ -22,6 +26,20 @@ export function FocusPage() {
   const { state, settings, taskId, sessionsByDay } = usePomodoro()
   const [params, setParams] = useSearchParams()
   const taskSelectId = useId()
+  const user = useCurrentUser()
+  const guard = cleanGuard(user?.timerGuard)
+  const active = useRunningEntry()
+  const standardOn = guardable(active)
+  const { mode, setMode } = useFocusMode()
+  // Whatever starts (here, in a task or on the dashboard) brings its own view to the front.
+  const startedKey = standardOn ? `s:${active.id}` : state.status === 'running' ? 'p' : ''
+  const [seenStart, setSeenStart] = useState(startedKey)
+  if (seenStart !== startedKey) {
+    setSeenStart(startedKey)
+    if (startedKey) setMode(standardOn ? 'standard' : 'pomodoro')
+  }
+  const elapsed = standardOn ? entryMs(active, now) : 0
+  const long = standardOn && elapsed >= guard.remindHours * 36e5
 
   // /focus?task=… (from the task drawer) picks that task, then tidies the URL.
   const wanted = params.get('task')
@@ -57,6 +75,12 @@ export function FocusPage() {
     return { sessions: sessionsByDay[day] ?? 0, focus, all }
   }, [data.entries, now, sessionsByDay])
 
+  const pickTask = (id: string | null) => {
+    void setPomodoroTask(id)
+    // A running standard timer follows the new task (the old one keeps the time so far).
+    if (standardOn && id && id !== active.taskId) void startTaskTimer(id)
+  }
+
   const primary = running ? t('focus.pause') : state.status === 'paused' ? t('focus.resume') : t('focus.start')
   const R = 120
   const C = 2 * Math.PI * R
@@ -70,6 +94,26 @@ export function FocusPage() {
 
       <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_340px]">
         <section aria-label={t('focus.timer')} className="flex flex-col items-center gap-6 card px-5 py-8 sm:px-8">
+          <div role="group" aria-label={t('focus.modeLabel')} className="flex w-full max-w-md gap-1 rounded-2xl border border-line bg-white p-1 shadow-sm">
+            {(['standard', 'pomodoro'] as FocusMode[]).map((m) => (
+              <button
+                key={m}
+                type="button"
+                aria-pressed={mode === m}
+                onClick={() => setMode(m)}
+                className={`flex min-h-11 flex-1 items-center justify-center gap-2 rounded-xl px-3 text-sm font-bold ${mode === m ? 'bg-ink text-white' : 'text-slate-600 hover:bg-slate-50 hover:text-ink'}`}
+              >
+                <Icon name={m === 'standard' ? 'clock' : 'focus'} size={16} />
+                {t(`focus.mode.${m}`)}
+                {((m === 'standard' && standardOn) || (m === 'pomodoro' && running)) && <span className="size-2 animate-pulse rounded-full bg-green-500" aria-hidden="true" />}
+              </button>
+            ))}
+          </div>
+
+          {mode === 'standard' ? (
+            <StandardClock elapsed={elapsed} running={standardOn} long={long} startedAt={standardOn ? active.startedAt : undefined} remindHours={guard.remindHours} />
+          ) : (
+          <>
           <div role="group" aria-label={t('focus.phaseLabel')} className="flex w-full max-w-md gap-1 rounded-xl bg-slate-100 p-1">
             {PHASES.map((p) => (
               <button
@@ -124,6 +168,8 @@ export function FocusPage() {
               )
             })}
           </ol>
+          </>
+          )}
 
           <div className="flex w-full max-w-md flex-col gap-1.5">
             <label htmlFor={taskSelectId} className="text-[13px] font-semibold text-slate-700">
@@ -132,7 +178,7 @@ export function FocusPage() {
             <select
               id={taskSelectId}
               value={task ? task.id : ''}
-              onChange={(e) => void setPomodoroTask(e.target.value || null)}
+              onChange={(e) => pickTask(e.target.value || null)}
               className="min-h-11 w-full rounded-[10px] border border-line bg-white px-3 text-[15px] outline-none focus:border-accent"
             >
               <option value="">{t('focus.noTask')}</option>
@@ -149,13 +195,35 @@ export function FocusPage() {
             {task ? (
               <div className="flex items-center gap-2 text-[13px] text-muted">
                 <ClientChip client={data.clientFor(task)} />
-                <span>{t('focus.loggedTo')}</span>
+                <span>{mode === 'standard' ? t('focus.standardLoggedTo') : t('focus.loggedTo')}</span>
               </div>
             ) : (
               <span className="text-[13px] text-muted">{t('focus.noTaskHint')}</span>
             )}
           </div>
 
+          {mode === 'standard' ? (
+            <div className="grid w-full max-w-md gap-2">
+              {standardOn ? (
+                <button type="button" onClick={() => void stopTaskTimer()} className="flex min-h-12 items-center justify-center gap-2 rounded-xl bg-ink px-4 text-base font-semibold text-white shadow-sm hover:bg-slate-700" data-testid="standard-stop">
+                  <Icon name="stop" size={14} />
+                  {t('focus.stop')}
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  disabled={!task}
+                  onClick={() => task && void startTaskTimer(task.id)}
+                  className="flex min-h-12 items-center justify-center gap-2 rounded-xl bg-accent px-4 text-base font-semibold text-white shadow-sm hover:bg-accent-strong disabled:cursor-not-allowed disabled:opacity-50"
+                  data-testid="standard-start"
+                >
+                  <Icon name="play" size={16} />
+                  {t('focus.start')}
+                </button>
+              )}
+              {!task && !standardOn && <span className="text-center text-[13px] text-muted">{t('focus.pickTaskFirst')}</span>}
+            </div>
+          ) : (
           <div className="grid w-full max-w-md grid-cols-[1fr_auto_auto] gap-2">
             <button
               type="button"
@@ -179,6 +247,7 @@ export function FocusPage() {
               {t('focus.reset')}
             </button>
           </div>
+          )}
         </section>
 
         <div className="flex flex-col gap-4">
@@ -192,7 +261,7 @@ export function FocusPage() {
               <Stat label={t('focus.tracked')} value={formatMinutes(today.all / 60_000)} />
             </dl>
           </section>
-          <Settings />
+          {mode === 'standard' ? <GuardCard /> : <Settings />}
         </div>
       </div>
     </main>
@@ -284,5 +353,80 @@ function NumberField({ label, unit, value, onCommit, min, max }: { label: string
         <span className="shrink-0 text-xs text-muted">{unit}</span>
       </div>
     </div>
+  )
+}
+
+/** The standard timer: counts up with no breaks; the ring fills once per hour. */
+function StandardClock({ elapsed, running, long, startedAt, remindHours }: { elapsed: number; running: boolean; long: boolean; startedAt?: string; remindHours: number }) {
+  const { t, i18n } = useTranslation()
+  const lang = i18n.resolvedLanguage ?? 'en'
+  const R = 120
+  const C = 2 * Math.PI * R
+  const hourProgress = (elapsed % 36e5) / 36e5
+  return (
+    <div className="flex flex-col items-center gap-3">
+      <div className="relative flex size-[280px] items-center justify-center sm:size-[300px]">
+        <svg viewBox="0 0 280 280" className="absolute inset-0 size-full -rotate-90" aria-hidden="true">
+          <circle cx="140" cy="140" r={R} fill="none" strokeWidth="12" className="stroke-slate-100" />
+          <circle
+            cx="140"
+            cy="140"
+            r={R}
+            fill="none"
+            strokeWidth="12"
+            strokeLinecap="round"
+            strokeDasharray={C}
+            strokeDashoffset={C * (1 - hourProgress)}
+            className={`${long ? 'stroke-amber-500' : 'stroke-accent'} transition-[stroke-dashoffset] duration-1000 ease-linear`}
+          />
+        </svg>
+        <div className="flex flex-col items-center gap-2">
+          <span className={`rounded-full px-3 py-1 text-xs font-semibold ${running ? (long ? 'bg-amber-100 text-amber-900' : 'bg-accent-soft text-accent-strong') : 'bg-slate-100 text-slate-700'}`}>
+            {t('focus.mode.standard')} · {running ? t('dash.widget.running') : t('dash.widget.ready')}
+          </span>
+          <span role="timer" className="text-[64px] leading-none font-semibold tracking-tight tabular-nums" data-testid="standard-clock">
+            {formatClock(elapsed)}
+          </span>
+          <span className="text-sm text-muted">{startedAt ? t('focus.startedAt', { time: formatInZone(startedAt, myTimezone(), lang, 'HH:mm') }) : t('focus.standardHint')}</span>
+        </div>
+      </div>
+      {long && (
+        <p className="m-0 flex items-center gap-2 rounded-xl bg-amber-50 px-3 py-2 text-sm text-amber-900" role="status">
+          <Icon name="alert" size={15} />
+          {t('focus.longRunning', { hours: remindHours })}
+        </p>
+      )}
+    </div>
+  )
+}
+
+/** How forgotten timers are caught, with a link to change the limits. */
+function GuardCard() {
+  const { t } = useTranslation()
+  const user = useCurrentUser()
+  const g = cleanGuard(user?.timerGuard)
+  return (
+    <section aria-labelledby="guard-h" className="flex flex-col gap-3 card p-5">
+      <h2 id="guard-h" className="m-0 text-base font-semibold">
+        {t('focus.guardTitle')}
+      </h2>
+      <ul className="m-0 flex list-none flex-col gap-2 p-0 text-sm text-slate-700">
+        <li className="flex gap-2">
+          <Icon name="bell" size={16} className="mt-0.5 shrink-0 text-accent" />
+          {t('focus.guardRemind', { hours: g.remindHours })}
+        </li>
+        <li className="flex gap-2">
+          <Icon name="pause" size={16} className="mt-0.5 shrink-0 text-accent" />
+          {t('focus.guardIdle', { minutes: g.idleMinutes })}
+        </li>
+        <li className="flex gap-2">
+          <Icon name="stop" size={16} className="mt-0.5 shrink-0 text-accent" />
+          {t('focus.guardMax', { hours: g.maxHours })}
+        </li>
+      </ul>
+      <Link to="/settings" className="self-start text-sm font-semibold text-accent">
+        {t('focus.guardChange')}
+      </Link>
+    </section>
   )
 }

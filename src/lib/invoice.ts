@@ -176,7 +176,7 @@ export function itemsFromTime(args: {
   const tasks = new Map(args.tasks.filter((t) => projects.has(t.projectId) && !t.cancelledAt).map((t) => [t.id, t]))
   const ms = new Map<string, number>()
   for (const e of args.entries) {
-    if (!e.endedAt || !e.billable || !tasks.has(e.taskId)) continue
+    if (!e.endedAt || !e.billable || e.needsReview || !tasks.has(e.taskId)) continue
     const inside = msWithin(e, args.range, Date.parse(e.endedAt))
     if (inside > 0) ms.set(e.taskId, (ms.get(e.taskId) ?? 0) + inside)
   }

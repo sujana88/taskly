@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { db } from '../../db/db'
 import { seedIfEmpty } from '../../db/seed'
 import { DEFAULT_SETTINGS, initialState } from '../../lib/pomodoro'
-import { addManualEntry, runningEntry, startEntry, stopEntry } from './actions'
+import { addManualEntry, runningEntry, startEntry, stopEntry, capEntry, markChecked } from './actions'
 import { completeIfDue, pausePomodoro, setPomodoroTask, skipPhase, startPomodoro, startTaskTimer, stopTaskTimer } from './controller'
 import { localDay, usePomodoro } from './store'
 
@@ -41,11 +41,20 @@ describe('time entries', () => {
     expect(await runningEntry()).toBeUndefined()
   })
 
-  it('logs manual time ending now', async () => {
-    const id = await addManualEntry('t-icons', 45)
+  it('logs manual time for any day, with a note', async () => {
+    const start = T0 - 26 * 60 * MIN
+    const id = await addManualEntry('t-icons', start, start + 45 * MIN, '  Call with Budi  ')
     const e = await db.timeEntries.get(id!)
-    expect(e).toMatchObject({ source: 'manual', endedAt: new Date(T0).toISOString(), startedAt: new Date(T0 - 45 * MIN).toISOString() })
-    expect(await addManualEntry('t-icons', 0)).toBeUndefined()
+    expect(e).toMatchObject({ source: 'manual', startedAt: new Date(start).toISOString(), endedAt: new Date(start + 45 * MIN).toISOString(), note: 'Call with Budi' })
+    expect(await addManualEntry('t-icons', start, start)).toBeUndefined()
+  })
+
+  it('stops a forgotten timer for review, and counts it again once checked', async () => {
+    const id = await startEntry('t-hero', 'timer', T0)
+    await capEntry(id, T0 + 12 * 60 * MIN)
+    expect(await db.timeEntries.get(id)).toMatchObject({ endedAt: new Date(T0 + 12 * 60 * MIN).toISOString(), needsReview: true })
+    await markChecked(id)
+    expect((await db.timeEntries.get(id))?.needsReview).toBeUndefined()
   })
 })
 

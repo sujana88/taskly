@@ -109,7 +109,7 @@ export async function cloudLogOut(): Promise<void> {
   await supabase!.auth.signOut().catch(() => undefined)
 }
 
-export async function cloudUpdateProfile(id: string, changes: Partial<Pick<User, 'name' | 'workHours' | 'business' | 'invoicing'>>): Promise<void> {
+export async function cloudUpdateProfile(id: string, changes: Partial<Pick<User, 'name' | 'workHours' | 'business' | 'invoicing' | 'timerGuard'>>): Promise<void> {
   const row = profileChanges(changes)
   const { error } = await supabase!.from('profiles').update(row).eq('id', id)
   if (error) console.warn('[taskly sync] profile not saved', error.message)

@@ -14,6 +14,7 @@ import { ReportsPage } from './features/reports/ReportsPage'
 import { SettingsPage } from './features/settings/SettingsPage'
 import { TasksPage } from './features/tasks/TasksPage'
 import { TimerEngine } from './features/timer/TimerEngine'
+import { TimerGuardian } from './features/timer/TimerGuardian'
 
 function Shell() {
   return (
@@ -24,6 +25,7 @@ function Shell() {
       </div>
       <BottomNav />
       <TimerEngine />
+      <TimerGuardian />
       <HelpCenter />
     </RequireAuth>
   )

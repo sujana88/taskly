@@ -60,3 +60,10 @@ export const usePomodoro = create<PomodoroStore>()(
     },
   ),
 )
+
+export type FocusMode = 'standard' | 'pomodoro'
+
+/** Which timer the Focus page shows when nothing is running: kept per device. */
+export const useFocusMode = create<{ mode: FocusMode; setMode: (mode: FocusMode) => void }>()(
+  persist((set) => ({ mode: 'pomodoro', setMode: (mode) => set({ mode }) }), { name: 'taskly.focusMode', storage: createJSONStorage(() => localStorage) }),
+)

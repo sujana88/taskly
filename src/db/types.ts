@@ -80,6 +80,8 @@ export interface User {
   business?: Business
   /** Invoice numbering, terms and tax rates. Missing on accounts that never set it. */
   invoicing?: InvoiceSettings
+  /** Forgotten-timer safety. Missing on accounts that never set it. */
+  timerGuard?: { remindHours: number; idleMinutes: number; maxHours: number }
 }
 
 export interface Business {
@@ -171,4 +173,6 @@ export interface TimeEntry {
   source: 'timer' | 'pomodoro' | 'manual'
   billable: boolean
   note?: string
+  /** Stopped automatically (forgotten timer): not billed until the user checks it. */
+  needsReview?: boolean
 }

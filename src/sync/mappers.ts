@@ -71,6 +71,7 @@ export interface TimeEntryRow {
   source: TimeEntry['source']
   billable: boolean
   note: string | null
+  needs_review?: boolean
 }
 
 export interface ProfileRow {
@@ -91,6 +92,7 @@ export interface ProfileRow {
   payment_details?: string
   tax_rates?: TaxRate[]
   invoice_units?: string[]
+  timer_guard?: { remindHours: number; idleMinutes: number; maxHours: number }
 }
 
 export interface InvoiceRow {
@@ -238,11 +240,12 @@ export function entryFromRow(r: TimeEntryRow): TimeEntry {
     source: r.source,
     billable: r.billable,
     ...(r.note ? { note: r.note } : {}),
+    ...(r.needs_review ? { needsReview: true } : {}),
   }
 }
 
 export function entryToRow(e: TimeEntry, userId: string): TimeEntryRow {
-  return { id: e.id, user_id: userId, task_id: e.taskId, started_at: e.startedAt, ended_at: e.endedAt ?? null, source: e.source, billable: e.billable, note: e.note ?? null }
+  return { id: e.id, user_id: userId, task_id: e.taskId, started_at: e.startedAt, ended_at: e.endedAt ?? null, source: e.source, billable: e.billable, note: e.note ?? null, needs_review: !!e.needsReview }
 }
 
 export const profileHours = (r: ProfileRow): WorkHours => hours(r)
@@ -258,6 +261,8 @@ export function profileBusiness(r: ProfileRow): Business {
   }
 }
 
+export const profileTimerGuard = (r: ProfileRow) => r.timer_guard
+
 export function profileInvoicing(r: ProfileRow): InvoiceSettings {
   return {
     prefix: r.invoice_prefix ?? 'INV-',
@@ -270,7 +275,7 @@ export function profileInvoicing(r: ProfileRow): InvoiceSettings {
 }
 
 /** The profile columns for the parts of a user that changed. */
-export function profileChanges(changes: Partial<Pick<User, 'name' | 'workHours' | 'business' | 'invoicing'>>): Record<string, unknown> {
+export function profileChanges(changes: Partial<Pick<User, 'name' | 'workHours' | 'business' | 'invoicing' | 'timerGuard'>>): Record<string, unknown> {
   const row: Record<string, unknown> = {}
   if (changes.name !== undefined) row.name = changes.name
   if (changes.workHours) Object.assign(row, { work_start: changes.workHours.start, work_end: changes.workHours.end, work_days: changes.workHours.days })
@@ -278,6 +283,7 @@ export function profileChanges(changes: Partial<Pick<User, 'name' | 'workHours' 
   if (b) Object.assign(row, { company_name: b.companyName, company_address: b.address, company_email: b.email, company_phone: b.phone, company_tax_id: b.taxId, company_logo: b.logo ?? null })
   const s = changes.invoicing
   if (s) Object.assign(row, { invoice_prefix: s.prefix, invoice_due_days: s.dueDays, invoice_notes: s.notes, payment_details: s.paymentDetails, tax_rates: s.taxRates, invoice_units: s.units })
+  if (changes.timerGuard) row.timer_guard = changes.timerGuard
   return row
 }
 
