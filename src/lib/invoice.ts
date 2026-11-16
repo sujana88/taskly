@@ -13,7 +13,29 @@ import { localeFor } from './time'
 /** Currencies without everyday cents. Keep in step with currency.ts. */
 const NO_CENTS = new Set(['IDR', 'JPY', 'KRW', 'VND', 'CLP', 'ISK'])
 
-export const DEFAULT_INVOICING: InvoiceSettings = { prefix: 'INV-', dueDays: 14, notes: '', paymentDetails: '', taxRates: [] }
+export const DEFAULT_UNITS = ['Hour', 'Pcs']
+export const DEFAULT_INVOICING: InvoiceSettings = { prefix: 'INV-', dueDays: 14, notes: '', paymentDetails: '', taxRates: [], units: DEFAULT_UNITS }
+
+/** Settings saved before units existed get the defaults. */
+export const unitsOf = (s?: Partial<InvoiceSettings>): string[] => (s?.units?.length ? s.units : DEFAULT_UNITS)
+
+/** The unit for tracked time: the first that reads like hours ("Hour", "Jam", "hrs"), else the first one. */
+export function timeUnit(units: string[]): string | undefined {
+  return units.find((u) => /hour|\bhrs?\b|\bjam\b|stunde|heure/i.test(u)) ?? units[0]
+}
+
+/** Trims, drops empty and repeated names (ignoring case), keeps the order. */
+export function cleanUnits(units: string[]): string[] {
+  const seen = new Set<string>()
+  const out: string[] = []
+  for (const raw of units) {
+    const u = raw.trim().replace(/\s+/g, ' ').slice(0, 20)
+    if (!u || seen.has(u.toLowerCase())) continue
+    seen.add(u.toLowerCase())
+    out.push(u)
+  }
+  return out
+}
 
 export function roundMoney(amount: number, currency: string): number {
   const f = NO_CENTS.has(currency) ? 1 : 100
@@ -106,6 +128,8 @@ export function itemsFromTime(args: {
   range: { start: number; end: number }
   rate: number
   newId: () => string
+  /** Unit printed on these lines, e.g. "Hour". */
+  unit?: string
 }): InvoiceItem[] {
   const projects = new Map(args.projects.filter((p) => p.clientId === args.clientId).map((p) => [p.id, p]))
   const tasks = new Map(args.tasks.filter((t) => projects.has(t.projectId) && !t.cancelledAt).map((t) => [t.id, t]))
@@ -123,6 +147,7 @@ export function itemsFromTime(args: {
         id: args.newId(),
         description: project ? `${task.title} (${project.name})` : task.title,
         quantity: Math.round((total / 36e5) * 100) / 100,
+        ...(args.unit ? { unit: args.unit } : {}),
         unitPrice: args.rate,
         taskId,
       }

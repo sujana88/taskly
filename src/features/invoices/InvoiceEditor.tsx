@@ -7,14 +7,14 @@ import { Modal } from '../../components/Modal'
 import { db } from '../../db/db'
 import type { Invoice, InvoiceItem, InvoiceStatus } from '../../db/types'
 import { CURRENCY_SYMBOL, currencyLabel, formatMoney } from '../../lib/currency'
-import { DEFAULT_INVOICING, formatDay, formatQuantity, invoiceTotals, lineAmount, monthStart, parseAmount, todayIn } from '../../lib/invoice'
+import { DEFAULT_INVOICING, formatDay, formatQuantity, timeUnit, unitsOf, invoiceTotals, lineAmount, monthStart, parseAmount, todayIn } from '../../lib/invoice'
 import { countryOptions } from '../../lib/phone'
 import { myTimezone } from '../../lib/time'
 import { useCurrentUser } from '../auth/useCurrentUser'
 import { billToDetails, deleteInvoice, newItem, saveInvoice, setInvoiceStatus, timeItems } from './actions'
 import { InvoiceDocument, PrintPortal } from './InvoiceDocument'
 import { StatusBadge } from './InvoicesPage'
-import { WhatsAppPanel } from './WhatsAppPanel'
+import { WhatsAppIcon, WhatsAppPanel } from './WhatsAppPanel'
 
 const field = 'min-h-11 w-full min-w-0 rounded-[10px] border border-line bg-white px-3 text-[15px] outline-none focus:border-accent disabled:bg-slate-50 disabled:text-slate-600'
 const label = 'text-[13px] font-semibold text-slate-700'
@@ -54,7 +54,7 @@ function Editor({ stored }: { stored: Invoice }) {
   const clients = useLiveQuery(() => db.clients.toArray(), [])
   const others = useLiveQuery(() => db.invoices.filter((x) => x.id !== stored.id).toArray(), [stored.id])
   const [draft, setDraft] = useState<Invoice>(stored)
-  const [mode, setMode] = useState<'edit' | 'preview'>(stored.status === 'draft' ? 'edit' : 'preview')
+  const [mode, setMode] = useState<'edit' | 'preview' | 'whatsapp'>(stored.status === 'draft' ? 'edit' : 'preview')
   const [confirm, setConfirm] = useState<'delete' | 'void' | null>(null)
   const [timeOpen, setTimeOpen] = useState(false)
   const ids = { client: useId(), name: useId(), details: useId(), number: useId(), issue: useId(), due: useId(), currency: useId(), tax: useId(), discount: useId(), notes: useId() }
@@ -89,6 +89,7 @@ function Editor({ stored }: { stored: Invoice }) {
 
   const set = (patch: Partial<Invoice>) => setDraft((d) => ({ ...d, ...patch }))
   const setItem = (itemId: string, patch: Partial<InvoiceItem>) => set({ items: draft.items.map((it) => (it.id === itemId ? { ...it, ...patch } : it)) })
+  const units = unitsOf(settings)
   const totals = invoiceTotals(draft)
   const money = (n: number) => formatMoney(n, draft.currency, lang)
   const currencies = [...new Set([...Object.keys(CURRENCY_SYMBOL), draft.currency])]
@@ -149,6 +150,18 @@ function Editor({ stored }: { stored: Invoice }) {
                 </button>
               ))}
             </div>
+            <button
+              type="button"
+              aria-pressed={mode === 'whatsapp'}
+              onClick={() => setMode('whatsapp')}
+              className={`flex min-h-10 items-center gap-2 rounded-[10px] px-4 text-sm font-semibold text-white shadow-[0_6px_16px_-8px_rgba(37,211,102,0.9)] ${
+                mode === 'whatsapp' ? 'bg-[#1aa34a] ring-2 ring-green-200' : 'bg-[#25D366] hover:bg-[#1ebe5b]'
+              }`}
+              data-testid="wa-tab"
+            >
+              <WhatsAppIcon size={18} />
+              {t('invoices.wa.title')}
+            </button>
             <button
               type="button"
               onClick={async () => {
@@ -220,17 +233,16 @@ function Editor({ stored }: { stored: Invoice }) {
         </p>
       )}
 
-      {mode === 'preview' ? (
-        <>
-          <div className="overflow-x-auto rounded-2xl bg-slate-200/70 p-3 sm:p-6">
-            <div className="mx-auto w-[210mm] shadow-xl">
-              <InvoiceDocument invoice={draft} business={user?.business} senderName={user?.name ?? ''} settings={settings} />
-            </div>
+      {mode === 'whatsapp' ? (
+        whatsApp
+      ) : mode === 'preview' ? (
+        <div className="overflow-x-auto rounded-2xl bg-slate-200/70 p-3 sm:p-6">
+          <div className="mx-auto w-[210mm] shadow-xl">
+            <InvoiceDocument invoice={draft} business={user?.business} senderName={user?.name ?? ''} settings={settings} />
           </div>
-          {whatsApp}
-        </>
+        </div>
       ) : (
-        <div className="grid items-start gap-5 xl:grid-cols-[minmax(0,1fr)_340px]">
+        <div className="grid items-start gap-5 xl:grid-cols-[minmax(0,1fr)_300px]">
           <div className="flex min-w-0 flex-col gap-5">
             <section className="card flex flex-col gap-4 p-5" aria-labelledby="billto-h">
               <h2 id="billto-h" className="m-0 text-base font-bold">
@@ -291,13 +303,14 @@ function Editor({ stored }: { stored: Invoice }) {
                 <p className="m-0 rounded-xl border border-dashed border-slate-300 px-4 py-6 text-center text-sm text-muted">{t('invoices.editor.noLines')}</p>
               ) : (
                 <div className="overflow-x-auto">
-                  <table className="w-full min-w-[620px] border-collapse text-sm" data-testid="item-table">
+                  <table className="w-full min-w-[720px] border-collapse text-sm" data-testid="item-table">
                     <thead>
                       <tr className="text-xs font-semibold tracking-wide text-muted uppercase">
                         <th className="pb-2 text-left">{t('invoices.editor.description')}</th>
-                        <th className="w-24 pb-2 pl-2 text-right">{t('invoices.editor.qty')}</th>
-                        <th className="w-32 pb-2 pl-2 text-right">{t('invoices.editor.unitPrice')}</th>
-                        <th className="w-36 pb-2 pl-2 text-right">{t('invoices.editor.amount')}</th>
+                        <th className="w-20 pb-2 pl-2 text-right">{t('invoices.editor.qty')}</th>
+                        <th className="w-24 pb-2 pl-2 text-left">{t('invoices.editor.unit')}</th>
+                        <th className="w-28 pb-2 pl-2 text-right">{t('invoices.editor.unitPrice')}</th>
+                        <th className="w-32 pb-2 pl-2 text-right">{t('invoices.editor.amount')}</th>
                         <th className="w-11 pb-2" />
                       </tr>
                     </thead>
@@ -308,6 +321,7 @@ function Editor({ stored }: { stored: Invoice }) {
                           item={it}
                           n={i + 1}
                           locked={locked}
+                          units={units}
                           amount={money(lineAmount(it, draft.currency))}
                           onChange={(patch) => setItem(it.id, patch)}
                           onRemove={() => set({ items: draft.items.filter((x) => x.id !== it.id) })}
@@ -321,7 +335,7 @@ function Editor({ stored }: { stored: Invoice }) {
                 <div className="flex flex-wrap gap-2">
                   <button
                     type="button"
-                    onClick={() => set({ items: [...draft.items, { ...newItem(), unitPrice: clients?.find((c) => c.id === draft.clientId)?.hourlyRate ?? 0 }] })}
+                    onClick={() => set({ items: [...draft.items, { ...newItem(units[0]), unitPrice: clients?.find((c) => c.id === draft.clientId)?.hourlyRate ?? 0 }] })}
                     className="flex min-h-10 items-center gap-2 rounded-[10px] border border-dashed border-slate-300 px-3.5 text-sm font-semibold text-slate-700 hover:border-accent hover:text-accent"
                   >
                     <Icon name="plus" size={15} />
@@ -343,8 +357,6 @@ function Editor({ stored }: { stored: Invoice }) {
               </label>
               <textarea id={ids.notes} disabled={locked} value={draft.notes} maxLength={2000} rows={3} onChange={(e) => set({ notes: e.target.value })} className={`${field} py-2.5 leading-relaxed`} />
             </section>
-
-            {whatsApp}
           </div>
 
           <aside className="card flex flex-col gap-4 p-5 xl:sticky xl:top-6" aria-labelledby="details-h">
@@ -362,7 +374,7 @@ function Editor({ stored }: { stored: Invoice }) {
                 </p>
               )}
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 gap-3 xl:grid-cols-1 2xl:grid-cols-2">
               <div className="flex flex-col gap-1.5">
                 <label htmlFor={ids.issue} className={label}>
                   {t('invoices.editor.issueDate')}
@@ -494,6 +506,7 @@ function Editor({ stored }: { stored: Invoice }) {
       <AddTimeDialog
         open={timeOpen}
         invoice={draft}
+        unit={timeUnit(units)}
         onClose={() => setTimeOpen(false)}
         onAdd={(items, start, end) => {
           // A task already on the invoice gets its hours updated instead of a second line.
@@ -510,7 +523,7 @@ function Editor({ stored }: { stored: Invoice }) {
   )
 }
 
-function ItemRow({ item, n, locked, amount, onChange, onRemove }: { item: InvoiceItem; n: number; locked: boolean; amount: string; onChange: (p: Partial<InvoiceItem>) => void; onRemove: () => void }) {
+function ItemRow({ item, n, locked, units, amount, onChange, onRemove }: { item: InvoiceItem; n: number; locked: boolean; units: string[]; amount: string; onChange: (p: Partial<InvoiceItem>) => void; onRemove: () => void }) {
   const { t } = useTranslation()
   const [qty, setQty] = useState(formatQuantity(item.quantity))
   const [price, setPrice] = useState(formatQuantity(item.unitPrice))
@@ -527,7 +540,7 @@ function ItemRow({ item, n, locked, amount, onChange, onRemove }: { item: Invoic
   return (
     <tr className="align-top" data-testid="item-row">
       <td className="py-1.5">
-        <input aria-label={`${t('invoices.editor.description')} ${n}`} disabled={locked} value={item.description} maxLength={500} onChange={(e) => onChange({ description: e.target.value })} className={cell} />
+        <input aria-label={`${t('invoices.editor.description')} ${n}`} title={item.description} disabled={locked} value={item.description} maxLength={500} onChange={(e) => onChange({ description: e.target.value })} className={cell} />
       </td>
       <td className="py-1.5 pl-2">
         <input
@@ -544,6 +557,23 @@ function ItemRow({ item, n, locked, amount, onChange, onRemove }: { item: Invoic
           onBlur={() => setQty(formatQuantity(item.quantity))}
           className={`${cell} text-right tabular-nums`}
         />
+      </td>
+      <td className="py-1.5 pl-2">
+        <select
+          aria-label={`${t('invoices.editor.unit')} ${n}`}
+          disabled={locked}
+          value={item.unit ?? ''}
+          onChange={(e) => onChange({ unit: e.target.value || undefined })}
+          className={`${cell} pr-1`}
+        >
+          <option value="">—</option>
+          {item.unit && !units.includes(item.unit) && <option value={item.unit}>{item.unit}</option>}
+          {units.map((u) => (
+            <option key={u} value={u}>
+              {u}
+            </option>
+          ))}
+        </select>
       </td>
       <td className="py-1.5 pl-2">
         <input
@@ -604,7 +634,7 @@ function MoneyField({ id, label: text, value, locked, onChange }: { id: string; 
   )
 }
 
-function AddTimeDialog({ open, invoice, onClose, onAdd }: { open: boolean; invoice: Invoice; onClose: () => void; onAdd: (items: InvoiceItem[], start: string, end: string) => void }) {
+function AddTimeDialog({ open, invoice, unit, onClose, onAdd }: { open: boolean; invoice: Invoice; unit?: string; onClose: () => void; onAdd: (items: InvoiceItem[], start: string, end: string) => void }) {
   const { t } = useTranslation()
   const client = useLiveQuery(() => (invoice.clientId ? db.clients.get(invoice.clientId) : undefined), [invoice.clientId])
   const [from, setFrom] = useState(invoice.periodStart ?? monthStart(invoice.issueDate))
@@ -617,11 +647,11 @@ function AddTimeDialog({ open, invoice, onClose, onAdd }: { open: boolean; invoi
 
   useEffect(() => {
     let live = true
-    if (open && client && ok) void timeItems(client, from, to).then((x) => live && setFound({ key: `${client.id}|${from}|${to}`, items: x }))
+    if (open && client && ok) void timeItems(client, from, to, unit).then((x) => live && setFound({ key: `${client.id}|${from}|${to}`, items: x }))
     return () => {
       live = false
     }
-  }, [open, client, from, to, ok])
+  }, [open, client, from, to, ok, unit])
 
   const field2 = 'min-h-11 w-full rounded-[10px] border border-line bg-white px-3 text-[15px] outline-none focus:border-accent'
   return (

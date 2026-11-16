@@ -89,7 +89,7 @@ export function invoiceMessage(input: MessageInput, lang: MessageLang): string {
   const due = formatDay(inv.dueDate, lang)
   const lines = inv.items
     .filter((it) => it.description.trim() || it.quantity * it.unitPrice !== 0)
-    .map((it) => `• ${it.description.trim() || '—'}\n   ${formatQuantity(it.quantity)} × ${money(it.unitPrice)} = ${money(lineAmount(it, inv.currency))}`)
+    .map((it) => `• ${it.description.trim() || '—'}\n   ${formatQuantity(it.quantity)}${it.unit ? ` ${it.unit}` : ''} × ${money(it.unitPrice)} = ${money(lineAmount(it, inv.currency))}`)
   const totals = [
     `${w.subtotal}: ${money(t.subtotal)}`,
     t.discount > 0 ? `${w.discount}: − ${money(t.discount)}` : '',

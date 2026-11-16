@@ -45,6 +45,7 @@ async function addPhones(page: Page) {
 
 test('the WhatsApp button waits for both phone numbers', async ({ page }) => {
   await newInvoice(page, 'Nordlicht Studio · EUR')
+  await page.getByTestId('wa-tab').click()
   const panel = page.getByTestId('wa-panel')
   await expect(panel.getByTestId('wa-send')).toBeDisabled()
   await expect(panel.getByTestId('wa-problems')).toContainText('Add a phone number for Nordlicht Studio')
@@ -55,12 +56,13 @@ test('the WhatsApp button waits for both phone numbers', async ({ page }) => {
 test('sends a polite message with the details, then offers to mark it as sent', async ({ page }) => {
   await addPhones(page)
   const url = await newInvoice(page, 'Nordlicht Studio · EUR')
+  await page.getByTestId('wa-tab').click()
   const panel = page.getByTestId('wa-panel')
   await expect(panel.getByTestId('wa-to')).toHaveText('Lena · +49 151 2345678')
   const message = panel.getByTestId('wa-message')
   // A Berlin client gets English; every line, the total and the signature are in.
   await expect(message).toHaveValue(/^Hello Lena,\n\nI hope you are doing well\. Please find below the details of invoice \*INV-2026-001\* from Demo Design Studio\./)
-  await expect(message).toHaveValue(/Hero section redesign \(Website refresh\)\n {3}4,17 × € 45 = € 187,65/)
+  await expect(message).toHaveValue(/Hero section redesign \(Website refresh\)\n {3}4,17 Hour × € 45 = € 187,65/)
   await expect(message).toHaveValue(/\*Total due: € [\d.,]+\*/)
   await expect(message).toHaveValue(/Kind regards,\nDemo Freelancer\nDemo Design Studio\n\+62 812 3456 7890$/)
   await panel.scrollIntoViewIfNeeded()
@@ -87,6 +89,7 @@ test('sends a polite message with the details, then offers to mark it as sent', 
 test('makes an image of the invoice to send', async ({ page }) => {
   await addPhones(page)
   await newInvoice(page, 'Nordlicht Studio · EUR')
+  await page.getByTestId('wa-tab').click()
   const panel = page.getByTestId('wa-panel')
   await panel.getByRole('button', { name: 'Invoice image' }).click()
   await expect(panel.getByTestId('wa-message')).toHaveValue(/^Hello Lena, please find attached invoice \*INV-2026-001\* for \*€ [\d.,]+\*, due on \*26 Nov 2026\*\./)
@@ -101,6 +104,7 @@ test('makes an image of the invoice to send', async ({ page }) => {
 
 test('an Indonesian client gets an Indonesian message', async ({ page }) => {
   await newInvoice(page, 'Warung Rasa · IDR')
+  await page.getByTestId('wa-tab').click()
   await expect(page.getByTestId('wa-message')).toHaveValue(/^Halo Pak Budi,/)
   await expect(page.getByTestId('wa-message')).toHaveValue(/Rp [\d.]+,-/)
 })

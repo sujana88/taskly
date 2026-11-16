@@ -104,9 +104,9 @@ describe('invoices and business profile', () => {
 
   it('maps business details and invoice settings to profile columns and back', () => {
     const business = { companyName: 'Demo Studio', address: 'Jakarta', email: 'a@b.c', phone: '+62 1', taxId: '01.234', logo: 'data:image/png;base64,AAA' }
-    const invoicing = { prefix: 'INV-', dueDays: 30, notes: 'n', paymentDetails: 'BCA', taxRates: [{ id: 'r', country: 'ID', name: 'PPN', rate: 11, kind: 'add' as const }] }
+    const invoicing = { prefix: 'INV-', dueDays: 30, notes: 'n', paymentDetails: 'BCA', taxRates: [{ id: 'r', country: 'ID', name: 'PPN', rate: 11, kind: 'add' as const }], units: ['Hour', 'Day'] }
     const row = profileChanges({ business, invoicing }) as Record<string, unknown>
-    expect(row).toMatchObject({ company_name: 'Demo Studio', company_logo: 'data:image/png;base64,AAA', invoice_due_days: 30, tax_rates: invoicing.taxRates })
+    expect(row).toMatchObject({ invoice_units: ['Hour', 'Day'], company_name: 'Demo Studio', company_logo: 'data:image/png;base64,AAA', invoice_due_days: 30, tax_rates: invoicing.taxRates })
     const profile = { id: UID, name: 'x', work_start: '09:00:00', work_end: '17:00:00', work_days: [1], ...row } as ProfileRow
     expect(profileBusiness(profile)).toEqual(business)
     expect(profileInvoicing(profile)).toEqual(invoicing)

@@ -128,3 +128,14 @@ describe('overlaps and number input', () => {
     expect(formatQuantity(1500)).toBe('1.500')
   })
 })
+
+describe('units', () => {
+  it('picks the hour-like unit for tracked time and cleans the list', async () => {
+    const { timeUnit, cleanUnits, unitsOf } = await import('./invoice')
+    expect(timeUnit(['Pcs', 'Hours', 'Day'])).toBe('Hours')
+    expect(timeUnit(['Pcs', 'Jam'])).toBe('Jam')
+    expect(timeUnit(['Pcs', 'Shrimp'])).toBe('Pcs')
+    expect(cleanUnits([' Hour ', 'hour', 'Pcs', '', 'Man  day'])).toEqual(['Hour', 'Pcs', 'Man day'])
+    expect(unitsOf({ units: [] })).toEqual(['Hour', 'Pcs'])
+  })
+})

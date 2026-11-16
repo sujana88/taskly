@@ -101,6 +101,7 @@ export function InvoiceDocument({ invoice: inv, business, senderName, settings }
           <tr className="border-b border-slate-300 text-[11px] tracking-wide text-slate-500 uppercase">
             <th className="py-2 pr-3 text-left font-semibold">{t('invoices.doc.description')}</th>
             <th className="w-[16mm] py-2 pr-3 text-right font-semibold">{t('invoices.doc.qty')}</th>
+            <th className="w-[20mm] py-2 pr-3 text-left font-semibold">{t('invoices.doc.unit')}</th>
             <th className="w-[30mm] py-2 pr-3 text-right font-semibold">{t('invoices.doc.rate')}</th>
             <th className="w-[34mm] py-2 text-right font-semibold">{t('invoices.doc.amount')}</th>
           </tr>
@@ -110,6 +111,7 @@ export function InvoiceDocument({ invoice: inv, business, senderName, settings }
             <tr key={it.id} className="border-b border-slate-200 align-top break-inside-avoid" data-testid="doc-line">
               <td className="py-2.5 pr-3 whitespace-pre-line">{it.description}</td>
               <td className="py-2.5 pr-3 text-right tabular-nums">{formatQuantity(it.quantity)}</td>
+              <td className="py-2.5 pr-3 text-slate-600" data-testid="doc-unit">{it.unit ?? ''}</td>
               <td className="py-2.5 pr-3 text-right tabular-nums">{money(it.unitPrice)}</td>
               <td className="py-2.5 text-right tabular-nums">{money(lineAmount(it, inv.currency))}</td>
             </tr>

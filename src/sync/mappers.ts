@@ -90,6 +90,7 @@ export interface ProfileRow {
   invoice_notes?: string
   payment_details?: string
   tax_rates?: TaxRate[]
+  invoice_units?: string[]
 }
 
 export interface InvoiceRow {
@@ -264,6 +265,7 @@ export function profileInvoicing(r: ProfileRow): InvoiceSettings {
     notes: r.invoice_notes ?? '',
     paymentDetails: r.payment_details ?? '',
     taxRates: (r.tax_rates ?? []).map((x) => ({ ...x, rate: Number(x.rate) })),
+    units: r.invoice_units ?? ['Hour', 'Pcs'],
   }
 }
 
@@ -275,7 +277,7 @@ export function profileChanges(changes: Partial<Pick<User, 'name' | 'workHours' 
   const b = changes.business
   if (b) Object.assign(row, { company_name: b.companyName, company_address: b.address, company_email: b.email, company_phone: b.phone, company_tax_id: b.taxId, company_logo: b.logo ?? null })
   const s = changes.invoicing
-  if (s) Object.assign(row, { invoice_prefix: s.prefix, invoice_due_days: s.dueDays, invoice_notes: s.notes, payment_details: s.paymentDetails, tax_rates: s.taxRates })
+  if (s) Object.assign(row, { invoice_prefix: s.prefix, invoice_due_days: s.dueDays, invoice_notes: s.notes, payment_details: s.paymentDetails, tax_rates: s.taxRates, invoice_units: s.units })
   return row
 }
 

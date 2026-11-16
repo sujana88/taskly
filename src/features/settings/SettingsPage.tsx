@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
 import { Icon } from '../../components/Icon'
 import type { InvoiceSettings, TaxKind, TaxRate, User } from '../../db/types'
-import { DEFAULT_INVOICING, nextInvoiceNumber, parseAmount, validTaxRate } from '../../lib/invoice'
+import { DEFAULT_INVOICING, cleanUnits, nextInvoiceNumber, parseAmount, unitsOf, validTaxRate } from '../../lib/invoice'
 import { countryForZone, countryOptions } from '../../lib/phone'
 import { myTimezone } from '../../lib/time'
 import { updateProfile } from '../auth/auth'
@@ -65,6 +65,7 @@ export function SettingsPage() {
       <div className="grid items-start gap-5 xl:grid-cols-[1.4fr_1fr]">
         <TaxSection user={user} settings={settings} />
         <div className="flex flex-col gap-5">
+          <UnitsSection user={user} settings={settings} />
           <InvoiceDefaults user={user} settings={settings} />
           <p className="m-0 flex flex-wrap items-center gap-2 rounded-2xl bg-slate-50 px-4 py-3 text-sm text-slate-700">
             {t('settings.businessLink')}
@@ -261,6 +262,113 @@ function InvoiceDefaults({ user, settings }: { user: User; settings: InvoiceSett
         className={`${primaryBtn} sm:w-auto sm:self-start sm:px-6`}
       >
         {t('settings.saveInvoice')}
+      </button>
+    </Section>
+  )
+}
+
+const UNIT_SUGGESTIONS = ['Hour', 'Day', 'Week', 'Month', 'Pcs', 'Project', 'Page', 'Word']
+
+/** The units offered on invoice lines ("Hour", "Pcs"…), defined by the user. */
+function UnitsSection({ user, settings }: { user: User; settings: InvoiceSettings }) {
+  const { t } = useTranslation()
+  const saved = unitsOf(settings)
+  const [units, setUnits] = useState<string[]>(saved)
+  const [name, setName] = useState('')
+  const [exists, setExists] = useState(false)
+  const [done, setDone] = useState(false)
+  const inputId = useId()
+  const changed = JSON.stringify(units) !== JSON.stringify(saved)
+
+  const add = (raw: string) => {
+    const u = raw.trim()
+    if (!u) return
+    if (units.some((x) => x.toLowerCase() === u.toLowerCase())) return setExists(true)
+    setUnits(cleanUnits([...units, u]))
+    setName('')
+    setExists(false)
+    setDone(false)
+  }
+
+  return (
+    <Section id="units-h" title={t('settings.unitsTitle')} subtitle={t('settings.unitsBody')}>
+      {units.length === 0 ? (
+        <p className="m-0 text-sm text-muted">{t('settings.unitsEmpty')}</p>
+      ) : (
+        <ul className="m-0 flex list-none flex-wrap gap-2 p-0" data-testid="unit-list">
+          {units.map((u) => (
+            <li key={u} className="flex min-h-9 items-center gap-1 rounded-full bg-blue-50 py-1 pr-1 pl-3.5 text-sm font-semibold text-blue-900 ring-1 ring-blue-100">
+              {u}
+              <button
+                type="button"
+                aria-label={t('settings.removeUnit', { unit: u })}
+                onClick={() => {
+                  setUnits(units.filter((x) => x !== u))
+                  setDone(false)
+                }}
+                className="flex size-7 items-center justify-center rounded-full text-blue-700 hover:bg-white hover:text-red-700"
+              >
+                <Icon name="close" size={13} />
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+      <form
+        className="flex flex-col gap-1.5"
+        onSubmit={(e) => {
+          e.preventDefault()
+          add(name)
+        }}
+      >
+        <label htmlFor={inputId} className={label}>
+          {t('settings.unitName')}
+        </label>
+        <div className="flex gap-2">
+          <input
+            id={inputId}
+            value={name}
+            maxLength={20}
+            onChange={(e) => {
+              setName(e.target.value)
+              setExists(false)
+            }}
+            className={input}
+            aria-invalid={exists}
+          />
+          <button type="submit" disabled={!name.trim()} className="flex min-h-11 shrink-0 items-center gap-1.5 rounded-xl border border-line px-3.5 text-sm font-semibold hover:bg-slate-50 disabled:opacity-50">
+            <Icon name="plus" size={15} />
+            {t('settings.addUnit')}
+          </button>
+        </div>
+        {exists && (
+          <p className="m-0 text-[13px] text-red-700" role="alert">
+            {t('settings.unitExists')}
+          </p>
+        )}
+      </form>
+      {UNIT_SUGGESTIONS.some((u) => !units.some((x) => x.toLowerCase() === u.toLowerCase())) && (
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-xs font-semibold tracking-wide text-muted uppercase">{t('settings.unitSuggestions')}</span>
+          {UNIT_SUGGESTIONS.filter((u) => !units.some((x) => x.toLowerCase() === u.toLowerCase())).map((u) => (
+            <button key={u} type="button" onClick={() => add(u)} className="flex min-h-8 items-center gap-1 rounded-full border border-line bg-white px-2.5 text-[13px] font-medium hover:border-accent hover:text-accent">
+              <Icon name="plus" size={11} />
+              {u}
+            </button>
+          ))}
+        </div>
+      )}
+      <Saved show={done} text={t('settings.saved')} />
+      <button
+        type="button"
+        disabled={!changed || units.length === 0}
+        onClick={async () => {
+          await updateProfile(user.id, { invoicing: { ...settings, units } })
+          setDone(true)
+        }}
+        className={`${primaryBtn} sm:w-auto sm:self-start sm:px-6`}
+      >
+        {t('settings.saveUnits')}
       </button>
     </Section>
   )

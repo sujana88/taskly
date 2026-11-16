@@ -100,7 +100,7 @@ const en: HelpContent = {
         'Mark as sent locks the invoice. Mark as paid when the money arrives; sent invoices past their due date show as Overdue.',
         'Print / Save PDF opens the print window: pick your printer, or "Save as PDF" to get a file to email to the client.',
         'Taskly warns you when part of the period is already billed in another invoice for the same client.',
-        'Send via WhatsApp (green button) works when the client has a phone number and your Business details have yours. Send a polite message with every line and the total, or an image of the invoice.',
+        'Send via WhatsApp (the green tab next to Preview) works when the client has a phone number and your Business details have yours. Send a polite message with every line and the total, or an image of the invoice.',
       ],
     },
     settings: {
@@ -110,6 +110,7 @@ const en: HelpContent = {
         'Tax rates: add one per country, e.g. PPN 11% for Indonesia or GST 10% for Australia. Quick add offers common rates; check them first.',
         'Type: Added taxes (VAT, PPN, GST) go on top of the subtotal. Withheld taxes (e.g. PPh 23) are deducted by the client.',
         'Invoice defaults: number prefix, payment terms in days, payment details (bank account) and default notes.',
+        'Units: the names each invoice line is counted in, e.g. Hour, Pcs, Day. Every line picks one, and it is printed on the invoice. Tracked time uses the unit named like "Hour".',
         'Your company name, address, tax ID and logo are on the Profile page, under Business details.',
       ],
     },
@@ -238,7 +239,7 @@ const id: HelpContent = {
         'Tandai terkirim mengunci invoice. Tandai lunas saat pembayaran masuk; invoice terkirim yang lewat jatuh tempo tampil sebagai Lewat jatuh tempo.',
         'Cetak / Simpan PDF membuka jendela cetak: pilih printer, atau "Simpan sebagai PDF" untuk mendapatkan file yang bisa dikirim ke klien.',
         'Taskly memberi peringatan bila sebagian periode sudah ditagih di invoice lain untuk klien yang sama.',
-        'Kirim lewat WhatsApp (tombol hijau) aktif bila klien punya nomor HP dan nomor Anda ada di Data usaha. Kirim pesan sopan berisi semua rincian dan total, atau gambar invoice.',
+        'Kirim lewat WhatsApp (tab hijau di samping Pratinjau) aktif bila klien punya nomor HP dan nomor Anda ada di Data usaha. Kirim pesan sopan berisi semua rincian dan total, atau gambar invoice.',
       ],
     },
     settings: {
@@ -248,6 +249,7 @@ const id: HelpContent = {
         'Tarif pajak: tambahkan per negara, mis. PPN 11% untuk Indonesia atau GST 10% untuk Australia. Tambah cepat menawarkan tarif umum; periksa dulu.',
         'Jenis: pajak Ditambahkan (PPN, VAT, GST) dihitung di atas subtotal. Pajak Dipotong (mis. PPh 23) dikurangkan oleh klien.',
         'Pengaturan invoice: awalan nomor, jangka waktu bayar dalam hari, info pembayaran (rekening bank) dan catatan bawaan.',
+        'Satuan: nama satuan hitung tiap baris invoice, mis. Hour, Pcs, Day. Setiap baris memilih satu, dan satuannya ikut tercetak di invoice. Waktu kerja tercatat memakai satuan seperti "Hour".',
         'Nama perusahaan, alamat, NPWP dan logo diatur di halaman Profil, bagian Data usaha.',
       ],
     },

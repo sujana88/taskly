@@ -4,7 +4,7 @@ import { imageMessage, invoiceMessage, waLink, waNumber } from './whatsapp'
 
 const invoice: Invoice = {
   id: 'i1', clientId: 'c1', number: 'INV-2026-001', status: 'draft', issueDate: '2026-11-12', dueDate: '2026-11-26', currency: 'EUR',
-  billToName: 'Nordlicht Studio', billToDetails: '', items: [{ id: 'a', description: 'Hero section redesign', quantity: 4.17, unitPrice: 45 }, { id: 'b', description: '', quantity: 1, unitPrice: 0 }],
+  billToName: 'Nordlicht Studio', billToDetails: '', items: [{ id: 'a', description: 'Hero section redesign', quantity: 4.17, unit: 'Hour', unitPrice: 45 }, { id: 'b', description: '', quantity: 1, unitPrice: 0 }],
   discount: 10, taxName: 'USt', taxRate: 19, taxKind: 'add', notes: '', periodStart: '2026-11-01', periodEnd: '2026-11-12', createdAt: '2026-11-12T00:00:00Z',
 }
 const sender = { name: 'Demo Freelancer', company: 'Demo Design Studio', phone: '+62 812 3456 7890' }
@@ -32,7 +32,7 @@ describe('invoice message', () => {
     expect(m).toContain('details of invoice *INV-2026-001* from Demo Design Studio.')
     expect(m).toContain('Due date: 26 Nov 2026')
     expect(m).toContain('Period: 1 Nov 2026 – 12 Nov 2026')
-    expect(m).toContain('• Hero section redesign\n   4,17 × € 45 = € 187,65')
+    expect(m).toContain('• Hero section redesign\n   4,17 Hour × € 45 = € 187,65')
     expect(m).not.toContain('• —')
     expect(m).toContain('Discount: − € 10')
     expect(m).toContain('USt 19%: € 33,75')

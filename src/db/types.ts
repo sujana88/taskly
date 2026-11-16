@@ -117,6 +117,8 @@ export interface InvoiceSettings {
   /** Bank account or payment link, printed on every invoice. */
   paymentDetails: string
   taxRates: TaxRate[]
+  /** Unit names offered on invoice lines, e.g. ["Hour", "Pcs"]. */
+  units: string[]
 }
 
 export type InvoiceStatus = 'draft' | 'sent' | 'paid' | 'void'
@@ -127,6 +129,8 @@ export interface InvoiceItem {
   description: string
   /** Hours or units. */
   quantity: number
+  /** "Hour", "Pcs"… (a name from Settings, copied onto the line). Missing on older lines. */
+  unit?: string
   unitPrice: number
   /** Set when the line came from tracked time on a task. */
   taskId?: string
