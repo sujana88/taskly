@@ -5,7 +5,10 @@ import type { Client, Project, Task, TimeEntry } from '../../db/types'
 
 export interface TaskData {
   loaded: boolean
+  /** Tasks that are not cancelled: what the dashboard, reports, focus and clients work with. */
   tasks: Task[]
+  /** Every task, cancelled ones included (Tasks page and task drawer). */
+  allTasks: Task[]
   clients: Client[]
   projects: Project[]
   clientsById: Map<string, Client>
@@ -41,7 +44,8 @@ export function useTaskData(): TaskData {
     }
     return {
       loaded: tasks !== undefined && clients !== undefined && projects !== undefined,
-      tasks: tasks ?? [],
+      tasks: (tasks ?? []).filter((x) => !x.cancelledAt),
+      allTasks: tasks ?? [],
       clients: (clients ?? []).filter((c) => !c.archived),
       projects: (projects ?? []).filter((p) => !p.archived),
       clientsById,

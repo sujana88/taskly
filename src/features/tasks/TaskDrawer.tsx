@@ -5,6 +5,7 @@ import { STATUSES, type Status, type Task } from '../../db/types'
 import { cityOf, formatInZone, fromDateTimeLocal, myTimezone, sameWallClock, toDateTimeLocal } from '../../lib/time'
 import { TaskTimeSection } from '../timer/TaskTimeSection'
 import { archiveTask, deleteTask, newSubtask, parseTags, restoreTask, updateTask } from './actions'
+import { CancelTaskDialog } from './CancelTaskDialog'
 import type { TaskData } from './useTaskData'
 
 interface DrawerProps {
@@ -16,7 +17,7 @@ interface DrawerProps {
 
 export function TaskDrawer({ data, taskId, onClose, autoFocusTitle }: DrawerProps) {
   const ref = useRef<HTMLDialogElement>(null)
-  const task = taskId ? data.tasks.find((x) => x.id === taskId) : undefined
+  const task = taskId ? data.allTasks.find((x) => x.id === taskId) : undefined
 
   useEffect(() => {
     const d = ref.current
@@ -33,7 +34,10 @@ export function TaskDrawer({ data, taskId, onClose, autoFocusTitle }: DrawerProp
   return (
     <dialog
       ref={ref}
-      onClose={onClose}
+      onClose={(e) => {
+        // Only this dialog closing closes the drawer (not a confirm dialog opened from inside it).
+        if (e.target === ref.current) onClose()
+      }}
       onClick={(e) => {
         if (e.target === ref.current) onClose()
       }}
@@ -55,6 +59,7 @@ function DrawerBody({ task, data, onClose, autoFocusTitle }: { task: Task; data:
   const [tags, setTags] = useState(task.tags.join(', '))
   const [subTitle, setSubTitle] = useState('')
   const [confirming, setConfirming] = useState(false)
+  const [cancelOpen, setCancelOpen] = useState(false)
   const titleRef = useRef<HTMLInputElement>(null)
   const client = data.clientFor(task)
 
@@ -97,6 +102,17 @@ function DrawerBody({ task, data, onClose, autoFocusTitle }: { task: Task; data:
       </header>
 
       <div className="flex flex-1 flex-col gap-5 overflow-y-auto px-6 py-5">
+        {task.cancelledAt && (
+          <div role="status" data-testid="drawer-cancelled" className="flex flex-wrap items-center justify-between gap-3 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-900">
+            <span className="flex items-center gap-2">
+              <Icon name="ban" size={16} />
+              {t('cancelled.cancelledOn', { date: formatInZone(task.cancelledAt, tz, lang, 'd MMM yyyy') })}
+            </span>
+            <button type="button" onClick={() => void restoreTask(task.id)} className="min-h-10 rounded-[10px] border border-red-200 bg-white px-3 text-sm font-semibold text-ink hover:bg-slate-50">
+              {t('archive.restore')}
+            </button>
+          </div>
+        )}
         {task.archivedAt && (
           <div role="status" data-testid="drawer-archived" className="flex flex-wrap items-center justify-between gap-3 rounded-xl bg-slate-100 px-4 py-3 text-sm text-slate-700">
             <span className="flex items-center gap-2">
@@ -267,6 +283,12 @@ function DrawerBody({ task, data, onClose, autoFocusTitle }: { task: Task; data:
           </div>
         ) : (
           <div className="flex items-center gap-1">
+          {task.status !== 'done' && !task.cancelledAt && (
+            <button type="button" onClick={() => setCancelOpen(true)} className="flex min-h-10 items-center gap-2 rounded-[10px] px-3 text-sm font-medium text-slate-700 hover:bg-red-50 hover:text-red-700">
+              <Icon name="ban" size={16} />
+              {t('cancelled.cancel')}
+            </button>
+          )}
           {task.status === 'done' && !task.archivedAt && (
             <button type="button" onClick={() => void archiveTask(task.id)} className="flex min-h-10 items-center gap-2 rounded-[10px] px-3 text-sm font-medium text-slate-700 hover:bg-slate-100">
               <Icon name="archive" size={16} />
@@ -280,6 +302,7 @@ function DrawerBody({ task, data, onClose, autoFocusTitle }: { task: Task; data:
           </div>
         )}
       </footer>
+      <CancelTaskDialog task={cancelOpen ? task : null} minutes={data.minutesByTask.get(task.id) ?? 0} onClose={() => setCancelOpen(false)} />
     </div>
   )
 }

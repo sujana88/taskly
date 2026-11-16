@@ -1,5 +1,8 @@
 import { db } from '../../db/db'
 import type { Status, Subtask, Task } from '../../db/types'
+import { runningEntry } from '../timer/actions'
+import { setPomodoroTask, stopTaskTimer } from '../timer/controller'
+import { usePomodoro } from '../timer/store'
 
 const uid = () => crypto.randomUUID()
 
@@ -33,6 +36,8 @@ export async function updateTask(id: string, changes: Partial<Omit<Task, 'id'>>)
       patch.completedAt = changes.status === 'done' ? new Date().toISOString() : undefined
       // Only finished tasks can stay archived.
       if (changes.status !== 'done') patch.archivedAt = undefined
+      // A finished task is no longer cancelled.
+      if (changes.status === 'done') patch.cancelledAt = undefined
     }
   }
   await db.tasks.update(id, patch)
@@ -50,9 +55,24 @@ export async function archiveTask(id: string): Promise<void> {
   await db.tasks.update(id, { archivedAt: new Date().toISOString() })
 }
 
-/** Bring an archived task back to the Done column. */
+/**
+ * Cancel an unfinished task: it leaves the board, list, calendar and dashboard, and every time
+ * entry logged on it is removed, so nothing is billed. A timer or focus session on it stops first.
+ */
+export async function cancelTask(id: string): Promise<void> {
+  const task = await db.tasks.get(id)
+  if (!task || task.status === 'done' || task.cancelledAt) return
+  if ((await runningEntry())?.taskId === id) await stopTaskTimer()
+  if (usePomodoro.getState().taskId === id) await setPomodoroTask(null)
+  await db.transaction('rw', [db.tasks, db.timeEntries], async () => {
+    await db.timeEntries.where('taskId').equals(id).delete()
+    await db.tasks.update(id, { cancelledAt: new Date().toISOString() })
+  })
+}
+
+/** Bring an archived task back to Done, or a cancelled one back to its column (with 0h logged). */
 export async function restoreTask(id: string): Promise<void> {
-  await db.tasks.update(id, { archivedAt: undefined })
+  await db.tasks.update(id, { archivedAt: undefined, cancelledAt: undefined })
 }
 
 export async function deleteTask(id: string): Promise<void> {

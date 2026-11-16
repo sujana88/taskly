@@ -48,6 +48,15 @@ describe('sync mappers', () => {
     expect(taskToRow(tasks[0], UID).archived_at).toBeNull()
   })
 
+  it('keeps cancelled_at for unfinished tasks only', () => {
+    const tasks = buildSampleTasks(Date.parse('2026-11-12T09:02:00Z'))
+    const open = { ...tasks.find((t) => t.status === 'in_progress')!, cancelledAt: '2026-11-13T10:00:00.000Z' }
+    const row = taskToRow(open, UID)
+    expect(row.cancelled_at).toBe('2026-11-13T10:00:00.000Z')
+    expect(taskFromRow(row, []).cancelledAt).toBe('2026-11-13T10:00:00.000Z')
+    expect(taskToRow({ ...open, status: 'done' }, UID).cancelled_at).toBeNull()
+  })
+
   it('maps time entries and orders finished ones before a running one', () => {
     const e = { id: 'e1', taskId: 't1', startedAt: '2026-11-12T08:00:00.000Z', source: 'timer' as const, billable: true }
     expect(entryFromRow(entryToRow(e, UID))).toEqual(e)

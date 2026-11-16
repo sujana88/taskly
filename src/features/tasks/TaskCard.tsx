@@ -16,6 +16,8 @@ export interface CardProps {
   tracking?: boolean
   /** Shows an Archive button on a finished card. */
   onArchive?: (id: string) => void
+  /** Shows a Cancel button on an unfinished card. */
+  onCancel?: (id: string) => void
 }
 
 export function ClientChip({ client, className = '' }: { client?: Client; className?: string }) {
@@ -31,7 +33,7 @@ export function ClientChip({ client, className = '' }: { client?: Client; classN
   )
 }
 
-export function TaskCardBody({ task, client, minutes, now, tracking, onArchive }: CardProps) {
+export function TaskCardBody({ task, client, minutes, now, tracking, onArchive, onCancel }: CardProps) {
   const { t, i18n } = useTranslation()
   const lang = i18n.resolvedLanguage ?? 'en'
   const tz = myTimezone()
@@ -99,8 +101,8 @@ export function TaskCardBody({ task, client, minutes, now, tracking, onArchive }
         </div>
       )}
 
-      <div className="flex items-center justify-between border-t border-slate-100 pt-2.5">
-        <span className="flex items-center gap-1.5 text-[13px] text-slate-700 tabular-nums">
+      <div className="flex flex-wrap items-center gap-2 border-t border-slate-100 pt-2.5">
+        <span className="mr-auto flex items-center gap-1.5 text-[13px] text-slate-700 tabular-nums">
           <Icon name="clock" size={14} />
           <span className="sr-only">{t('card.logged')}: </span>
           {formatMinutes(minutes)}
@@ -110,6 +112,23 @@ export function TaskCardBody({ task, client, minutes, now, tracking, onArchive }
             <span className="size-1.5 animate-pulse rounded-full bg-accent" aria-hidden="true" />
             {t('timer.tracking')}
           </span>
+        )}
+        {onCancel && task.status !== 'done' && (
+          <button
+            type="button"
+            onPointerDown={(e) => e.stopPropagation()}
+            onKeyDown={(e) => e.stopPropagation()}
+            onClick={(e) => {
+              e.stopPropagation()
+              onCancel(task.id)
+            }}
+            aria-label={t('cancelled.cancelTask', { title: task.title })}
+            data-testid="card-cancel"
+            className="-my-1 flex min-h-8 cursor-pointer items-center gap-1.5 rounded-lg px-2 text-xs font-semibold text-slate-500 hover:bg-red-50 hover:text-red-700"
+          >
+            <Icon name="ban" size={14} />
+            {t('cancelled.cancel')}
+          </button>
         )}
         {onArchive && task.status === 'done' && (
           <button

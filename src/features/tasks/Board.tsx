@@ -23,6 +23,7 @@ import { Icon } from '../../components/Icon'
 import { STATUSES, type Status, type Task } from '../../db/types'
 import { buildColumns, findContainer, moveAcross, placement, reorderWithin, type Columns } from '../../lib/board'
 import { archiveTask, createTask, moveTask } from './actions'
+import { CancelTaskDialog } from './CancelTaskDialog'
 import { SortableTaskCard, TaskCardBody } from './TaskCard'
 import type { TaskData } from './useTaskData'
 
@@ -78,6 +79,7 @@ export function Board({ data, tasks, now, onOpen, defaultProjectId, trackingId }
   const base = useMemo(() => buildColumns(tasks), [tasks])
   const [dragCols, setDragCols] = useState<Columns | null>(null)
   const [activeId, setActiveId] = useState<string | null>(null)
+  const [cancelling, setCancelling] = useState<Task | null>(null)
   const cols = dragCols ?? base
   const byId = useMemo(() => new Map(tasks.map((x) => [x.id, x])), [tasks])
 
@@ -166,6 +168,7 @@ export function Board({ data, tasks, now, onOpen, defaultProjectId, trackingId }
                       tracking={trackingId === id}
                       onOpen={onOpen}
                       onArchive={(id) => void archiveTask(id)}
+                      onCancel={() => setCancelling(task)}
                       describedBy={hintId}
                     />
                   )
@@ -183,6 +186,7 @@ export function Board({ data, tasks, now, onOpen, defaultProjectId, trackingId }
           ) : null}
         </DragOverlay>
       </DndContext>
+      <CancelTaskDialog task={cancelling} minutes={cancelling ? (data.minutesByTask.get(cancelling.id) ?? 0) : 0} onClose={() => setCancelling(null)} />
     </>
   )
 }

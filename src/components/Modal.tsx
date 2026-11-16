@@ -18,7 +18,11 @@ export function Modal({ open, title, onClose, children, footer, wide }: { open: 
   return (
     <dialog
       ref={ref}
-      onClose={onClose}
+      onClose={(e) => {
+        // React passes a nested dialog's close event up its component tree: keep it here.
+        e.stopPropagation()
+        onClose()
+      }}
       onClick={(e) => {
         if (e.target === ref.current) onClose()
       }}

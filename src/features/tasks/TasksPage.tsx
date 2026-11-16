@@ -16,7 +16,7 @@ import { ListView } from './ListView'
 import { TaskDrawer } from './TaskDrawer'
 import { useTaskData } from './useTaskData'
 
-type View = 'kanban' | 'list' | 'calendar' | 'archive'
+type View = 'kanban' | 'list' | 'calendar' | 'cancelled' | 'archive'
 
 export function TasksPage() {
   const { t } = useTranslation()
@@ -27,7 +27,7 @@ export function TasksPage() {
   const [justCreated, setJustCreated] = useState<string | null>(null)
 
   const viewParam = params.get('view')
-  const view: View = viewParam === 'list' || viewParam === 'calendar' || viewParam === 'archive' ? viewParam : 'kanban'
+  const view: View = viewParam === 'list' || viewParam === 'calendar' || viewParam === 'cancelled' || viewParam === 'archive' ? viewParam : 'kanban'
   const monthParam = params.get('month')
   const month = parseMonthKey(monthParam) ? monthParam! : monthKeyOf(now, myTimezone())
   const q = params.get('q') ?? ''
@@ -57,11 +57,13 @@ export function TasksPage() {
   )
 
   // Archived tasks only appear in the Archive view; the other views show the rest.
-  const active = useMemo(() => data.tasks.filter((x) => !x.archivedAt), [data.tasks])
-  const archived = useMemo(() => data.tasks.filter((x) => !!x.archivedAt), [data.tasks])
+  // Archived and cancelled tasks only appear in their own views; the other views show the rest.
+  const active = useMemo(() => data.allTasks.filter((x) => !x.archivedAt && !x.cancelledAt), [data.allTasks])
+  const archived = useMemo(() => data.allTasks.filter((x) => !!x.archivedAt), [data.allTasks])
+  const cancelled = useMemo(() => data.allTasks.filter((x) => !!x.cancelledAt), [data.allTasks])
   const filtered = useMemo(
-    () => filterTasks(view === 'archive' ? archived : active, { q, clientId }, data.projectsById, data.clientsById),
-    [view, active, archived, data, q, clientId],
+    () => filterTasks(view === 'archive' ? archived : view === 'cancelled' ? cancelled : active, { q, clientId }, data.projectsById, data.clientsById),
+    [view, active, archived, cancelled, data, q, clientId],
   )
   const listed = useMemo(() => sortTasks(filtered, sort, dir, (x) => data.clientFor(x)?.name ?? ''), [filtered, sort, dir, data])
 
@@ -96,7 +98,7 @@ export function TasksPage() {
   const filtersActive = q !== '' || clientId !== null
 
   const segBtn = (active: boolean) =>
-    `flex min-h-10 flex-1 items-center justify-center gap-1.5 rounded-[9px] px-2 text-[13px] font-semibold sm:flex-none sm:gap-2 sm:px-4 sm:text-sm ${active ? 'bg-white text-ink shadow-sm' : 'text-slate-600 hover:text-ink'}`
+    `flex min-h-10 flex-1 items-center justify-center gap-1.5 rounded-[9px] px-1.5 text-[12.5px] font-semibold sm:flex-none sm:gap-2 sm:px-4 sm:text-sm ${active ? 'bg-white text-ink shadow-sm' : 'text-slate-600 hover:text-ink'}`
   const ctl = 'flex min-h-11 items-center gap-2 rounded-[10px] border border-line bg-white px-3.5 text-sm text-slate-700'
 
   return (
@@ -123,6 +125,11 @@ export function TasksPage() {
           <button type="button" aria-pressed={view === 'calendar'} onClick={() => update({ view: 'calendar' })} className={segBtn(view === 'calendar')}>
             <span className="hidden sm:inline-flex"><Icon name="calendar" /></span>
             {t('view.calendar')}
+          </button>
+          <button type="button" aria-pressed={view === 'cancelled'} onClick={() => update({ view: 'cancelled', month: null })} className={segBtn(view === 'cancelled')}>
+            <span className="hidden sm:inline-flex"><Icon name="ban" /></span>
+            {t('view.cancelled')}
+            {cancelled.length > 0 && <span className="rounded-full bg-slate-200 px-1.5 text-xs tabular-nums text-slate-700">{cancelled.length}</span>}
           </button>
           <button type="button" aria-pressed={view === 'archive'} onClick={() => update({ view: 'archive', month: null })} className={segBtn(view === 'archive')}>
             <span className="hidden sm:inline-flex"><Icon name="archive" /></span>
@@ -183,8 +190,8 @@ export function TasksPage() {
             {t('empty.clear')}
           </button>
         </div>
-      ) : view === 'archive' ? (
-        <ArchiveView data={data} tasks={filtered} onOpen={open} />
+      ) : view === 'archive' || view === 'cancelled' ? (
+        <ArchiveView mode={view} data={data} tasks={filtered} onOpen={open} />
       ) : view === 'kanban' ? (
         <Board data={data} tasks={filtered} now={now} onOpen={open} defaultProjectId={defaultProjectId} trackingId={running?.taskId} />
       ) : view === 'calendar' ? (
