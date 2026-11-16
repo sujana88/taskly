@@ -175,21 +175,32 @@ test('a second invoice continues the numbering and warns about a period already 
 test('Indonesian invoice and phone layout', async ({ page }) => {
   await page.goto('/#/invoices')
   await page.getByRole('button', { name: 'ID', exact: true }).first().click()
-  await page.getByRole('button', { name: 'Invoice baru' }).first().click()
-  const dialog = page.getByRole('dialog', { name: 'Invoice baru' })
+  await page.getByRole('button', { name: 'Tagihan baru' }).first().click()
+  const dialog = page.getByRole('dialog', { name: 'Tagihan baru' })
   await dialog.getByLabel('Klien').selectOption({ label: 'Warung Rasa · IDR' })
   await dialog.getByRole('button', { name: 'Buat draf' }).click()
   await page.getByRole('button', { name: 'Pratinjau' }).click()
   const doc = page.getByTestId('invoice-doc').first()
   await expect(doc).toContainText('Ditagihkan kepada')
   await expect(doc.getByTestId('doc-amount-due')).toHaveText(/^Rp [\d.]+,-$/)
+  // Common units read in Indonesian; the picker keeps Hour and Hours apart.
+  await expect(doc.getByTestId('doc-unit').first()).toHaveText('Jam')
+  await page.getByRole('button', { name: 'Ubah' }).click()
+  await expect(page.getByLabel('Satuan 1').locator('option')).toHaveText(['—', 'Jam · Hour', 'Jam · Hours', 'Layanan', 'Proyek'])
+  await page.getByRole('button', { name: 'Pratinjau' }).click()
 
   await page.setViewportSize({ width: 390, height: 844 })
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)
   expect(overflow).toBeLessThanOrEqual(0)
-  await page.getByRole('link', { name: 'Semua invoice' }).click()
-  await expect(page.getByTestId('bottom-nav').getByRole('link', { name: 'Invoice' })).toBeVisible()
+  await page.getByRole('link', { name: 'Semua tagihan' }).click()
+  await expect(page.getByRole('heading', { name: 'Tagihan', level: 1 })).toBeVisible()
+  await expect(page.getByTestId('bottom-nav').getByRole('link', { name: 'Tagihan' })).toBeVisible()
   await page.screenshot({ path: `${shots}/57-invoices-mobile.png`, fullPage: true })
+})
+
+test('the menu lists Invoices before Reports', async ({ page }) => {
+  await page.goto('/#/')
+  await expect(page.getByRole('navigation', { name: 'Main' }).first().getByRole('link')).toHaveText(['Dashboard', 'Tasks', 'Focus', 'Clients', 'Invoices', 'Reports', 'Settings'])
 })
 
 test('settings: units for invoice lines', async ({ page }) => {

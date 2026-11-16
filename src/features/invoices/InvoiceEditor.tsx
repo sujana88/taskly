@@ -7,7 +7,7 @@ import { Modal } from '../../components/Modal'
 import { db } from '../../db/db'
 import type { Invoice, InvoiceItem, InvoiceStatus } from '../../db/types'
 import { CURRENCY_SYMBOL, currencyLabel, formatMoney } from '../../lib/currency'
-import { DEFAULT_INVOICING, formatDay, formatQuantity, timeUnit, unitsOf, invoiceTotals, lineAmount, monthStart, parseAmount, todayIn } from '../../lib/invoice'
+import { DEFAULT_INVOICING, formatDay, formatQuantity, timeUnit, unitOption, unitsOf, invoiceTotals, lineAmount, monthStart, parseAmount, todayIn } from '../../lib/invoice'
 import { countryOptions } from '../../lib/phone'
 import { myTimezone } from '../../lib/time'
 import { useCurrentUser } from '../auth/useCurrentUser'
@@ -308,7 +308,7 @@ function Editor({ stored }: { stored: Invoice }) {
                       <tr className="text-xs font-semibold tracking-wide text-muted uppercase">
                         <th className="pb-2 text-left">{t('invoices.editor.description')}</th>
                         <th className="w-20 pb-2 pl-2 text-right">{t('invoices.editor.qty')}</th>
-                        <th className="w-24 pb-2 pl-2 text-left">{t('invoices.editor.unit')}</th>
+                        <th className="w-32 pb-2 pl-2 text-left">{t('invoices.editor.unit')}</th>
                         <th className="w-28 pb-2 pl-2 text-right">{t('invoices.editor.unitPrice')}</th>
                         <th className="w-32 pb-2 pl-2 text-right">{t('invoices.editor.amount')}</th>
                         <th className="w-11 pb-2" />
@@ -524,7 +524,8 @@ function Editor({ stored }: { stored: Invoice }) {
 }
 
 function ItemRow({ item, n, locked, units, amount, onChange, onRemove }: { item: InvoiceItem; n: number; locked: boolean; units: string[]; amount: string; onChange: (p: Partial<InvoiceItem>) => void; onRemove: () => void }) {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
+  const lang = i18n.resolvedLanguage ?? 'en'
   const [qty, setQty] = useState(formatQuantity(item.quantity))
   const [price, setPrice] = useState(formatQuantity(item.unitPrice))
   // Follow outside changes (e.g. hours refreshed from tracked time).
@@ -567,10 +568,10 @@ function ItemRow({ item, n, locked, units, amount, onChange, onRemove }: { item:
           className={`${cell} pr-1`}
         >
           <option value="">—</option>
-          {item.unit && !units.includes(item.unit) && <option value={item.unit}>{item.unit}</option>}
+          {item.unit && !units.includes(item.unit) && <option value={item.unit}>{unitOption(item.unit, lang, units)}</option>}
           {units.map((u) => (
             <option key={u} value={u}>
-              {u}
+              {unitOption(u, lang, units)}
             </option>
           ))}
         </select>

@@ -13,7 +13,7 @@ export interface HelpContent {
   shortcuts: { keys: string[]; action: string }[]
 }
 
-export const GUIDE_ORDER: GuideId[] = ['dashboard', 'tasks', 'focus', 'clients', 'reports', 'invoices', 'settings']
+export const GUIDE_ORDER: GuideId[] = ['dashboard', 'tasks', 'focus', 'clients', 'invoices', 'reports', 'settings']
 export const GUIDE_ROUTE: Record<GuideId, string> = { dashboard: '/', tasks: '/tasks', focus: '/focus', clients: '/clients', reports: '/reports', invoices: '/invoices', settings: '/settings' }
 export const GUIDE_ICON: Record<GuideId, AppIconName> = { dashboard: 'today', tasks: 'tasks', focus: 'focus', clients: 'clients', reports: 'reports', invoices: 'invoices', settings: 'settings' }
 
@@ -230,7 +230,7 @@ const id: HelpContent = {
       ],
     },
     invoices: {
-      title: 'Invoice',
+      title: 'Tagihan',
       summary: 'Tagih klien dari waktu kerja yang tercatat, lalu cetak atau simpan sebagai PDF.',
       points: [
         'Invoice baru: pilih klien dan periode. Waktu yang bisa ditagih di setiap tugas klien menjadi satu baris: jam × tarif klien.',

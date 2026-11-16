@@ -27,6 +27,44 @@ export function timeUnit(units: string[]): string | undefined {
   return units.find((u) => /hours|\bhrs\b/i.test(u)) ?? units.find((u) => /hour|\bhr\b|\bjam\b|stunde|heure/i.test(u)) ?? units[0]
 }
 
+/** Indonesian names for the common units; anything else is shown as typed. Stored names stay as they are. */
+const UNIT_ID: Record<string, string> = {
+  hour: 'Jam',
+  hours: 'Jam',
+  hr: 'Jam',
+  hrs: 'Jam',
+  service: 'Layanan',
+  project: 'Proyek',
+  day: 'Hari',
+  days: 'Hari',
+  week: 'Minggu',
+  weeks: 'Minggu',
+  month: 'Bulan',
+  months: 'Bulan',
+  page: 'Halaman',
+  pages: 'Halaman',
+  word: 'Kata',
+  words: 'Kata',
+  item: 'Item',
+  pcs: 'Pcs',
+}
+
+/** "Hours" → "Jam" in Indonesian; English and custom names are shown as typed. */
+export function unitLabel(unit: string | undefined, lang: string): string {
+  if (!unit) return ''
+  return lang === 'id' ? (UNIT_ID[unit.trim().toLowerCase()] ?? unit) : unit
+}
+
+/**
+ * For pickers: the translated name, plus the stored name only when another unit in the list
+ * reads the same ("Hour" and "Hours" are both "Jam" → "Jam · Hour", "Jam · Hours").
+ */
+export function unitOption(unit: string, lang: string, all: string[] = []): string {
+  const label = unitLabel(unit, lang)
+  const clash = all.some((u) => u !== unit && unitLabel(u, lang) === label)
+  return clash && label !== unit ? `${label} · ${unit}` : label
+}
+
 /** Trims, drops empty and repeated names (ignoring case), keeps the order. */
 export function cleanUnits(units: string[]): string[] {
   const seen = new Set<string>()

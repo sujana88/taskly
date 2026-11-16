@@ -49,6 +49,7 @@ describe('invoice message', () => {
     expect(m).toContain('*Total tagihan: Rp 2.450.000,-*')
     expect(m).toContain('Mohon pembayaran dapat dilakukan paling lambat *26 Nov 2026*.')
     expect(m).toContain('Salam hangat,')
+    expect(invoiceMessage({ invoice, sender }, 'id')).toContain('4,17 Jam × € 45')
   })
 
   it('has a short version to go with the image', () => {

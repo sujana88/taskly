@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
 import type { Business, Invoice, InvoiceSettings } from '../../db/types'
 import { formatMoney } from '../../lib/currency'
-import { formatDay, formatQuantity, invoiceTotals, lineAmount } from '../../lib/invoice'
+import { formatDay, formatQuantity, invoiceTotals, lineAmount, unitLabel } from '../../lib/invoice'
 
 interface DocProps {
   invoice: Invoice
@@ -112,7 +112,7 @@ export function InvoiceDocument({ invoice: inv, business, senderName, settings }
             <tr key={it.id} className="border-b border-slate-200 align-top break-inside-avoid" data-testid="doc-line">
               <td className="py-2.5 pr-3 whitespace-pre-line">{it.description}</td>
               <td className="py-2.5 pr-3 text-right tabular-nums">{formatQuantity(it.quantity)}</td>
-              <td className="py-2.5 pr-3 text-slate-600" data-testid="doc-unit">{it.unit ?? ''}</td>
+              <td className="py-2.5 pr-3 text-slate-600" data-testid="doc-unit">{unitLabel(it.unit, lang)}</td>
               <td className="py-2.5 pr-3 text-right tabular-nums">{money(it.unitPrice)}</td>
               <td className="py-2.5 text-right tabular-nums">{money(lineAmount(it, inv.currency))}</td>
             </tr>

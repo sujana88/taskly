@@ -87,7 +87,8 @@ export function ClientDialog({ open, client, onClose }: { open: boolean; client?
  * Country code picker plus the local number. The code follows the client's time zone until
  * one is picked or a number is typed; typing a number that starts with "+" picks the code too.
  */
-function PhoneField({ id, value, timezone, invalid, onChange }: { id: string; value: string; timezone: string; invalid: boolean; onChange: (v: string) => void }) {
+/** Phone number with a country-code picker ("JP +81" + local number), stored as "+81 3 1234 5678". */
+export function PhoneField({ id, value, timezone, invalid, onChange, roomy = false }: { id: string; value: string; timezone: string; invalid: boolean; onChange: (v: string) => void; roomy?: boolean }) {
   const { t, i18n } = useTranslation()
   const lang = i18n.resolvedLanguage ?? 'en'
   const suggested = countryForZone(timezone, countryForZone(myTimezone()))
@@ -114,8 +115,12 @@ function PhoneField({ id, value, timezone, invalid, onChange }: { id: string; va
   }
 
   return (
-    <div className={`flex min-h-11 w-full min-w-0 items-stretch rounded-[10px] border bg-white focus-within:border-accent ${invalid ? 'border-red-600' : 'border-line'}`}>
-      <label className="relative flex shrink-0 cursor-pointer items-center gap-1 rounded-l-[10px] border-r border-line bg-slate-50 pr-2 pl-3 text-[15px] font-semibold tabular-nums hover:bg-slate-100 has-focus-visible:outline-2 has-focus-visible:outline-accent">
+    <div
+      className={`flex w-full min-w-0 items-stretch border focus-within:border-accent ${invalid ? 'border-red-600' : 'border-line'} ${
+        roomy ? 'min-h-12 rounded-2xl bg-slate-50 focus-within:bg-white focus-within:ring-4 focus-within:ring-blue-100' : 'min-h-11 rounded-[10px] bg-white'
+      }`}
+    >
+      <label className="relative flex shrink-0 cursor-pointer items-center gap-1 rounded-l-[inherit] border-r border-line bg-slate-50 pr-2 pl-3 text-[15px] font-semibold tabular-nums hover:bg-slate-100 has-focus-visible:outline-2 has-focus-visible:outline-accent">
         <span aria-hidden="true" data-testid="phone-dial">
           <span className="mr-1 text-xs font-bold text-muted">{country}</span>
           {COUNTRY_DIAL[country]}
@@ -145,7 +150,7 @@ function PhoneField({ id, value, timezone, invalid, onChange }: { id: string; va
         onChange={(e) => onLocal(e.target.value)}
         autoComplete="off"
         aria-invalid={invalid}
-        className="min-w-0 flex-1 rounded-r-[10px] border-none bg-transparent px-3 text-[15px] tabular-nums outline-none"
+        className="min-w-0 flex-1 rounded-r-[inherit] border-none bg-transparent px-3 text-[15px] tabular-nums outline-none"
       />
     </div>
   )

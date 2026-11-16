@@ -16,8 +16,8 @@ const NAV_ITEMS: { to: string; key: string; icon: AppIconName; end?: boolean; ph
   { to: '/tasks', key: 'nav.tasks', icon: 'tasks' },
   { to: '/focus', key: 'nav.focus', icon: 'focus' },
   { to: '/clients', key: 'nav.clients', icon: 'clients' },
-  { to: '/reports', key: 'nav.reports', icon: 'reports' },
   { to: '/invoices', key: 'nav.invoices', icon: 'invoices' },
+  { to: '/reports', key: 'nav.reports', icon: 'reports' },
   // On phones Settings sits in the header (gear), keeping the bottom bar to six tabs.
   { to: '/settings', key: 'nav.settings', icon: 'settings', phone: false },
 ]

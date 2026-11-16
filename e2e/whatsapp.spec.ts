@@ -18,7 +18,7 @@ test.beforeEach(async ({ page }) => {
 
 async function newInvoice(page: Page, client: string) {
   await page.goto('/#/invoices')
-  await page.getByRole('button', { name: /New invoice|Invoice baru/ }).first().click()
+  await page.getByRole('button', { name: /New invoice|Tagihan baru/ }).first().click()
   const dialog = page.getByRole('dialog')
   await dialog.getByRole('combobox').first().selectOption({ label: client })
   await dialog.getByRole('button', { name: /Create draft|Buat draf/ }).click()
@@ -30,7 +30,9 @@ async function addPhones(page: Page) {
   await page.goto('/#/profile')
   const form = page.getByTestId('business-form')
   await form.getByLabel('Company name').fill('Demo Design Studio')
-  await form.getByLabel('Phone / WhatsApp').fill('+62 812 3456 7890')
+  // The country code comes from this device's zone (Jakarta → +62); only the local number is typed.
+  await expect(form.getByTestId('phone-dial')).toHaveText('ID+62')
+  await form.getByLabel('Phone / WhatsApp').fill('0812 3456 7890')
   await form.getByRole('button', { name: 'Save business details' }).click()
   await expect(form.getByText('Saved')).toBeVisible()
 

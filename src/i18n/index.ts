@@ -482,7 +482,7 @@ type Dict = typeof en
 
 const id: Dict = {
   ...invoicesId,
-  nav: { main: 'Utama', profile: 'Profil', hi: 'Hai, {{name}}', menu: 'Menu', dashboard: 'Dasbor', tasks: 'Tugas', focus: 'Fokus', clients: 'Klien', reports: 'Laporan', invoices: 'Invoice', settings: 'Pengaturan' },
+  nav: { main: 'Utama', profile: 'Profil', hi: 'Hai, {{name}}', menu: 'Menu', dashboard: 'Dasbor', tasks: 'Tugas', focus: 'Fokus', clients: 'Klien', reports: 'Laporan', invoices: 'Tagihan', settings: 'Pengaturan' },
   profile: {
     title: 'Profil',
     cloudAccount: 'Akun tersinkron',

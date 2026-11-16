@@ -7,7 +7,8 @@ import { BACKEND } from '../../lib/supabase'
 import { AuthError, changePassword, logOut, updateProfile, type AuthErrorCode } from '../auth/auth'
 import { Field, FormError, Strength, primaryBtn } from '../auth/fields'
 import { initials, useCurrentUser } from '../auth/useCurrentUser'
-import { HoursFields } from '../clients/ClientDialog'
+import { HoursFields, PhoneField } from '../clients/ClientDialog'
+import { myTimezone } from '../../lib/time'
 
 function Section({ id, title, subtitle, children }: { id: string; title: string; subtitle?: string; children: ReactNode }) {
   return (
@@ -121,7 +122,7 @@ function BusinessSection({ user }: { user: User }) {
   const [saved, setSaved] = useState(false)
   const [logoError, setLogoError] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
-  const ids = { address: useId(), logo: useId() }
+  const ids = { address: useId(), logo: useId(), phone: useId() }
   const changed = JSON.stringify(b) !== JSON.stringify(initial)
   const set = (patch: Partial<Business>) => {
     setB((x) => ({ ...x, ...patch }))
@@ -196,7 +197,13 @@ function BusinessSection({ user }: { user: User }) {
         </div>
         <div className="grid gap-4 sm:grid-cols-2">
           <Field label={t('business.email')} type="email" value={b.email} onChange={(v) => set({ email: v })} autoComplete="email" />
-          <Field label={t('business.phone')} type="tel" value={b.phone} onChange={(v) => set({ phone: v })} autoComplete="tel" />
+          <div className="flex flex-col gap-1.5">
+            <label htmlFor={ids.phone} className="text-[13px] font-bold text-slate-700">
+              {t('business.phone')}
+            </label>
+            {/* Country code from this device's zone; WhatsApp needs it. */}
+            <PhoneField id={ids.phone} value={b.phone} timezone={myTimezone()} invalid={false} onChange={(phone) => set({ phone })} roomy />
+          </div>
         </div>
         <Field label={t('business.taxId')} value={b.taxId} onChange={(v) => set({ taxId: v })} />
         <Saved show={saved} text={t('profile.saved')} />

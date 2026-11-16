@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
 import { Icon } from '../../components/Icon'
 import type { InvoiceSettings, TaxKind, TaxRate, User } from '../../db/types'
-import { DEFAULT_INVOICING, cleanUnits, nextInvoiceNumber, parseAmount, unitsOf, validTaxRate } from '../../lib/invoice'
+import { DEFAULT_INVOICING, cleanUnits, nextInvoiceNumber, parseAmount, unitOption, unitsOf, validTaxRate } from '../../lib/invoice'
 import { countryForZone, countryOptions } from '../../lib/phone'
 import { myTimezone } from '../../lib/time'
 import { updateProfile } from '../auth/auth'
@@ -286,7 +286,8 @@ const UNIT_SUGGESTIONS = ['Day', 'Week', 'Month', 'Pcs', 'Page', 'Word']
 
 /** The units offered on invoice lines ("Hour", "Pcs"…), defined by the user. */
 function UnitsSection({ user, settings }: { user: User; settings: InvoiceSettings }) {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
+  const lang = i18n.resolvedLanguage ?? 'en'
   const saved = unitsOf(settings)
   const [units, setUnits] = useState<string[]>(saved)
   const [name, setName] = useState('')
@@ -313,7 +314,7 @@ function UnitsSection({ user, settings }: { user: User; settings: InvoiceSetting
         <ul className="m-0 flex list-none flex-wrap gap-2 p-0" data-testid="unit-list">
           {units.map((u) => (
             <li key={u} className="flex min-h-9 items-center gap-1 rounded-full bg-blue-50 py-1 pr-1 pl-3.5 text-sm font-semibold text-blue-900 ring-1 ring-blue-100">
-              {u}
+              {unitOption(u, lang, units)}
               <button
                 type="button"
                 aria-label={t('settings.removeUnit', { unit: u })}
@@ -368,7 +369,7 @@ function UnitsSection({ user, settings }: { user: User; settings: InvoiceSetting
           {UNIT_SUGGESTIONS.filter((u) => !units.some((x) => x.toLowerCase() === u.toLowerCase())).map((u) => (
             <button key={u} type="button" onClick={() => add(u)} className="flex min-h-8 items-center gap-1 rounded-full border border-line bg-white px-2.5 text-[13px] font-medium hover:border-accent hover:text-accent">
               <Icon name="plus" size={11} />
-              {u}
+              {unitOption(u, lang, [...units, u])}
             </button>
           ))}
         </div>
