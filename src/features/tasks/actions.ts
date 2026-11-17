@@ -35,7 +35,10 @@ export async function updateTask(id: string, changes: Partial<Omit<Task, 'id'>>)
     if (current && current.status !== changes.status) {
       patch.completedAt = changes.status === 'done' ? new Date().toISOString() : undefined
       // Only finished tasks can stay archived.
-      if (changes.status !== 'done') patch.archivedAt = undefined
+      if (changes.status !== 'done') {
+        patch.archivedAt = undefined
+        patch.deliveredAt = undefined
+      }
       // A finished task is no longer cancelled.
       if (changes.status === 'done') patch.cancelledAt = undefined
     }
@@ -52,7 +55,7 @@ export async function moveTask(id: string, status: Status, order: number): Promi
 export async function archiveTask(id: string): Promise<void> {
   const task = await db.tasks.get(id)
   if (!task || task.status !== 'done' || task.archivedAt) return
-  await db.tasks.update(id, { archivedAt: new Date().toISOString() })
+  await db.tasks.update(id, { archivedAt: new Date().toISOString(), deliveredAt: undefined })
 }
 
 /**
@@ -70,9 +73,16 @@ export async function cancelTask(id: string): Promise<void> {
   })
 }
 
-/** Bring an archived task back to Done, or a cancelled one back to its column (with 0h logged). */
+/** A finished task handed over to the client: it leaves the board (Done · Delivered) and can be restored. */
+export async function deliverTask(id: string): Promise<void> {
+  const task = await db.tasks.get(id)
+  if (!task || task.status !== 'done' || task.deliveredAt) return
+  await db.tasks.update(id, { deliveredAt: new Date().toISOString(), archivedAt: undefined })
+}
+
+/** Bring an archived or delivered task back to Done, or a cancelled one back to its column (with 0h logged). */
 export async function restoreTask(id: string): Promise<void> {
-  await db.tasks.update(id, { archivedAt: undefined, cancelledAt: undefined })
+  await db.tasks.update(id, { archivedAt: undefined, cancelledAt: undefined, deliveredAt: undefined })
 }
 
 export async function deleteTask(id: string): Promise<void> {

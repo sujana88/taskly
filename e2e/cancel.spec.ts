@@ -77,14 +77,14 @@ test('Indonesian labels', async ({ page }) => {
   await expect(page.getByTestId('cancelled-row')).toContainText('Dikerjakan · Dibatalkan')
 })
 
-test('five view tabs still fit a phone screen', async ({ page }) => {
+test('the view tabs fit a phone screen (the row scrolls, the page does not)', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 })
   const tabs = page.getByRole('group', { name: 'View' })
   const box = (await tabs.boundingBox())!
   expect(box.x + box.width).toBeLessThanOrEqual(390 - 16)
-  for (const name of [/^Cancelled/, /^Archive/]) {
-    const b = (await tabs.getByRole('button', { name }).boundingBox())!
-    expect(b.x + b.width).toBeLessThanOrEqual(box.x + box.width)
-  }
+  expect(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)).toBeLessThanOrEqual(0)
+  await tabs.getByRole('button', { name: /^Delivered/ }).scrollIntoViewIfNeeded()
+  await tabs.getByRole('button', { name: /^Delivered/ }).click()
+  await expect(page).toHaveURL(/view=delivered/)
   await tabs.screenshot({ path: `${shots}/45-view-tabs-mobile.png` })
 })

@@ -66,6 +66,8 @@ export interface Task {
   completedAt?: string
   /** Set when a finished task is archived by hand: it leaves the board, list and calendar. */
   archivedAt?: string
+  /** Set when a finished task was delivered to the client: it leaves the board, like archived. */
+  deliveredAt?: string
   /** Set when an unfinished task is cancelled: hidden everywhere but the Cancelled view, logged time removed. */
   cancelledAt?: string
 }

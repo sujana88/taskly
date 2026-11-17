@@ -8,7 +8,7 @@ import type { TaskData } from './useTaskData'
 
 interface ArchiveProps {
   /** "archive": finished tasks archived by hand. "cancelled": unfinished tasks that were called off. */
-  mode: 'archive' | 'cancelled'
+  mode: 'archive' | 'cancelled' | 'delivered'
   data: TaskData
   /** Tasks of this kind, already filtered by search and client. */
   tasks: Task[]
@@ -21,15 +21,15 @@ export function ArchiveView({ mode, data, tasks, onOpen }: ArchiveProps) {
   const lang = i18n.resolvedLanguage ?? 'en'
   const tz = myTimezone()
   const cancelled = mode === 'cancelled'
-  const ns = cancelled ? 'cancelled' : 'archive'
-  const when = (x: Task) => (cancelled ? x.cancelledAt : x.archivedAt) ?? ''
+  const ns = mode
+  const when = (x: Task) => (mode === 'cancelled' ? x.cancelledAt : mode === 'delivered' ? x.deliveredAt : x.archivedAt) ?? ''
   const sorted = [...tasks].sort((a, b) => when(b).localeCompare(when(a)))
   const day = (iso?: string) => (iso ? formatInZone(iso, tz, lang, 'd MMM yyyy') : '—')
 
   if (sorted.length === 0) {
     return (
       <div className="flex flex-col items-center gap-2 rounded-2xl border border-dashed border-slate-300 bg-white px-6 py-14 text-center" role="status" data-testid={`${mode}-empty`}>
-        <Icon name={cancelled ? 'ban' : 'archive'} size={22} />
+        <Icon name={cancelled ? 'ban' : mode === 'delivered' ? 'send' : 'archive'} size={22} />
         <h2 className="m-0 text-lg font-semibold">{t(`${ns}.emptyTitle`)}</h2>
         <p className="m-0 max-w-md text-sm text-muted">{t(`${ns}.emptyBody`)}</p>
       </div>
@@ -77,7 +77,7 @@ export function ArchiveView({ mode, data, tasks, onOpen }: ArchiveProps) {
                 <td className={td}>
                   <span
                     className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold whitespace-nowrap ${
-                      cancelled ? 'bg-red-50 text-red-800' : 'bg-slate-100 text-slate-700'
+                      cancelled ? 'bg-red-50 text-red-800' : mode === 'delivered' ? 'bg-green-50 text-green-800' : 'bg-slate-100 text-slate-700'
                     }`}
                   >
                     {t(`status.${task.status}`)} · {t(`${ns}.badge`)}

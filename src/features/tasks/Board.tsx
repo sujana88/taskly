@@ -22,7 +22,7 @@ import { useTranslation } from 'react-i18next'
 import { Icon } from '../../components/Icon'
 import { STATUSES, type Status, type Task } from '../../db/types'
 import { buildColumns, findContainer, moveAcross, placement, reorderWithin, type Columns } from '../../lib/board'
-import { archiveTask, createTask, moveTask } from './actions'
+import { archiveTask, createTask, deliverTask, moveTask } from './actions'
 import { CancelTaskDialog } from './CancelTaskDialog'
 import { SortableTaskCard, TaskCardBody } from './TaskCard'
 import type { TaskData } from './useTaskData'
@@ -168,6 +168,7 @@ export function Board({ data, tasks, now, onOpen, defaultProjectId, trackingId }
                       tracking={trackingId === id}
                       onOpen={onOpen}
                       onArchive={(id) => void archiveTask(id)}
+                      onDeliver={(id) => void deliverTask(id)}
                       onCancel={() => setCancelling(task)}
                       describedBy={hintId}
                     />

@@ -17,6 +17,8 @@ export interface CardProps {
   tracking?: boolean
   /** Shows an Archive button on a finished card. */
   onArchive?: (id: string) => void
+  /** Shows a Delivered button on a finished card. */
+  onDeliver?: (id: string) => void
   /** Shows a Cancel button on an unfinished card. */
   onCancel?: (id: string) => void
 }
@@ -44,7 +46,7 @@ export function ClientChip({ client, className = '' }: { client?: Client; classN
   )
 }
 
-export function TaskCardBody({ task, client, minutes, now, tracking, onArchive, onCancel }: CardProps) {
+export function TaskCardBody({ task, client, minutes, now, tracking, onArchive, onDeliver, onCancel }: CardProps) {
   const { t, i18n } = useTranslation()
   const lang = i18n.resolvedLanguage ?? 'en'
   const tz = myTimezone()
@@ -144,7 +146,28 @@ export function TaskCardBody({ task, client, minutes, now, tracking, onArchive, 
             {t('cancelled.cancel')}
           </button>
         )}
-        {onArchive && task.status === 'done' && (
+        {task.status === 'done' && (onDeliver || onArchive) && (
+          // Delivered and Archive stay together: on a narrow card they move to the next line as a pair.
+          <span className="ml-auto flex items-center gap-0.5">
+          {onDeliver && (
+          <button
+            type="button"
+            onPointerDown={(e) => e.stopPropagation()}
+            onKeyDown={(e) => e.stopPropagation()}
+            onClick={(e) => {
+              e.stopPropagation()
+              onDeliver(task.id)
+            }}
+            aria-label={t('delivered.deliverTask', { title: task.title })}
+            title={t('delivered.deliver')}
+            data-testid="card-deliver"
+            className="-my-1 flex min-h-8 cursor-pointer items-center gap-1.5 rounded-lg px-2 text-xs font-semibold text-green-700 hover:bg-green-50"
+          >
+            <Icon name="send" size={14} />
+            {t('delivered.deliver')}
+          </button>
+        )}
+          {onArchive && (
           <button
             type="button"
             // The card itself is draggable and opens on click: keep this button's events to itself.
@@ -162,6 +185,8 @@ export function TaskCardBody({ task, client, minutes, now, tracking, onArchive, 
             <Icon name="archive" size={14} />
             {t('archive.archive')}
           </button>
+        )}
+          </span>
         )}
       </div>
     </>

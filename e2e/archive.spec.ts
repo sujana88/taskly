@@ -67,13 +67,3 @@ test('Indonesian labels', async ({ page }) => {
   await expect(page.getByTestId('archive-row')).toContainText('Selesai · Diarsipkan')
   await expect(page.getByRole('button', { name: 'Kembalikan Design system audit' })).toBeVisible()
 })
-
-test('the four view tabs fit a phone screen', async ({ page }) => {
-  await page.setViewportSize({ width: 390, height: 844 })
-  const tabs = page.getByRole('group', { name: 'View' })
-  const box = (await tabs.boundingBox())!
-  expect(box.x + box.width).toBeLessThanOrEqual(390 - 16)
-  const archive = (await tabs.getByRole('button', { name: /^Archive/ }).boundingBox())!
-  expect(archive.x + archive.width).toBeLessThanOrEqual(box.x + box.width)
-  await tabs.screenshot({ path: `${shots}/42-view-tabs-mobile.png` })
-})

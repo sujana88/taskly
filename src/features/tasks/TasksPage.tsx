@@ -16,7 +16,7 @@ import { ListView } from './ListView'
 import { TaskDrawer } from './TaskDrawer'
 import { useTaskData } from './useTaskData'
 
-type View = 'kanban' | 'list' | 'calendar' | 'cancelled' | 'archive'
+type View = 'kanban' | 'list' | 'calendar' | 'cancelled' | 'archive' | 'delivered'
 
 export function TasksPage() {
   const { t } = useTranslation()
@@ -27,7 +27,7 @@ export function TasksPage() {
   const [justCreated, setJustCreated] = useState<string | null>(null)
 
   const viewParam = params.get('view')
-  const view: View = viewParam === 'list' || viewParam === 'calendar' || viewParam === 'cancelled' || viewParam === 'archive' ? viewParam : 'kanban'
+  const view: View = viewParam === 'list' || viewParam === 'calendar' || viewParam === 'cancelled' || viewParam === 'archive' || viewParam === 'delivered' ? viewParam : 'kanban'
   const monthParam = params.get('month')
   const month = parseMonthKey(monthParam) ? monthParam! : monthKeyOf(now, myTimezone())
   const q = params.get('q') ?? ''
@@ -56,14 +56,14 @@ export function TasksPage() {
     [setParams],
   )
 
-  // Archived tasks only appear in the Archive view; the other views show the rest.
   // Archived and cancelled tasks only appear in their own views; the other views show the rest.
-  const active = useMemo(() => data.allTasks.filter((x) => !x.archivedAt && !x.cancelledAt), [data.allTasks])
+  const active = useMemo(() => data.allTasks.filter((x) => !x.archivedAt && !x.cancelledAt && !x.deliveredAt), [data.allTasks])
+  const delivered = useMemo(() => data.allTasks.filter((x) => !!x.deliveredAt), [data.allTasks])
   const archived = useMemo(() => data.allTasks.filter((x) => !!x.archivedAt), [data.allTasks])
   const cancelled = useMemo(() => data.allTasks.filter((x) => !!x.cancelledAt), [data.allTasks])
   const filtered = useMemo(
-    () => filterTasks(view === 'archive' ? archived : view === 'cancelled' ? cancelled : active, { q, clientId }, data.projectsById, data.clientsById),
-    [view, active, archived, cancelled, data, q, clientId],
+    () => filterTasks(view === 'archive' ? archived : view === 'delivered' ? delivered : view === 'cancelled' ? cancelled : active, { q, clientId }, data.projectsById, data.clientsById),
+    [view, active, archived, delivered, cancelled, data, q, clientId],
   )
   const listed = useMemo(() => sortTasks(filtered, sort, dir, (x) => data.clientFor(x)?.name ?? ''), [filtered, sort, dir, data])
 
@@ -113,7 +113,7 @@ export function TasksPage() {
       <ClientClocks clients={data.clients} now={now} />
 
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line pb-4">
-        <div role="group" aria-label={t('view.label')} className="flex w-full gap-1 rounded-xl bg-slate-100 p-1 sm:w-auto">
+        <div role="group" aria-label={t('view.label')} className="flex w-full gap-1 overflow-x-auto rounded-xl bg-slate-100 p-1 [scrollbar-width:none] sm:w-auto">
           <button type="button" aria-pressed={view === 'kanban'} onClick={() => update({ view: null, month: null })} className={segBtn(view === 'kanban')}>
             <span className="hidden sm:inline-flex"><Icon name="kanban" /></span>
             {t('view.kanban')}
@@ -135,6 +135,11 @@ export function TasksPage() {
             <span className="hidden sm:inline-flex"><Icon name="archive" /></span>
             {t('view.archive')}
             {archived.length > 0 && <span className="rounded-full bg-slate-200 px-1.5 text-xs tabular-nums text-slate-700">{archived.length}</span>}
+          </button>
+          <button type="button" aria-pressed={view === 'delivered'} onClick={() => update({ view: 'delivered', month: null })} className={segBtn(view === 'delivered')}>
+            <span className="hidden sm:inline-flex"><Icon name="send" /></span>
+            {t('view.delivered')}
+            {delivered.length > 0 && <span className="rounded-full bg-green-100 px-1.5 text-xs tabular-nums text-green-800">{delivered.length}</span>}
           </button>
         </div>
 
@@ -190,7 +195,7 @@ export function TasksPage() {
             {t('empty.clear')}
           </button>
         </div>
-      ) : view === 'archive' || view === 'cancelled' ? (
+      ) : view === 'archive' || view === 'cancelled' || view === 'delivered' ? (
         <ArchiveView mode={view} data={data} tasks={filtered} onOpen={open} />
       ) : view === 'kanban' ? (
         <Board data={data} tasks={filtered} now={now} onOpen={open} defaultProjectId={defaultProjectId} trackingId={running?.taskId} />

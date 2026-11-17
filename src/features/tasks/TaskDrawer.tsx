@@ -4,7 +4,7 @@ import { Icon } from '../../components/Icon'
 import { PRIORITIES, STATUSES, type Status, type Task } from '../../db/types'
 import { cityOf, formatInZone, fromDateTimeLocal, myTimezone, sameWallClock, toDateTimeLocal } from '../../lib/time'
 import { TaskTimeSection } from '../timer/TaskTimeSection'
-import { archiveTask, deleteTask, newSubtask, parseTags, restoreTask, updateTask } from './actions'
+import { archiveTask, deleteTask, deliverTask, newSubtask, parseTags, restoreTask, updateTask } from './actions'
 import { CancelTaskDialog } from './CancelTaskDialog'
 import { PRIORITY_STYLE } from './priority'
 import type { TaskData } from './useTaskData'
@@ -110,6 +110,17 @@ function DrawerBody({ task, data, onClose, autoFocusTitle }: { task: Task; data:
               {t('cancelled.cancelledOn', { date: formatInZone(task.cancelledAt, tz, lang, 'd MMM yyyy') })}
             </span>
             <button type="button" onClick={() => void restoreTask(task.id)} className="min-h-10 rounded-[10px] border border-red-200 bg-white px-3 text-sm font-semibold text-ink hover:bg-slate-50">
+              {t('archive.restore')}
+            </button>
+          </div>
+        )}
+        {task.deliveredAt && (
+          <div role="status" data-testid="drawer-delivered" className="flex flex-wrap items-center justify-between gap-3 rounded-xl bg-green-50 px-4 py-3 text-sm text-green-900">
+            <span className="flex items-center gap-2">
+              <Icon name="send" size={16} />
+              {t('delivered.deliveredOn', { date: formatInZone(task.deliveredAt, tz, lang, 'd MMM yyyy') })}
+            </span>
+            <button type="button" onClick={() => void restoreTask(task.id)} className="min-h-10 rounded-[10px] border border-green-200 bg-white px-3 text-sm font-semibold text-ink hover:bg-slate-50">
               {t('archive.restore')}
             </button>
           </div>
@@ -321,7 +332,13 @@ function DrawerBody({ task, data, onClose, autoFocusTitle }: { task: Task; data:
               {t('cancelled.cancel')}
             </button>
           )}
-          {task.status === 'done' && !task.archivedAt && (
+          {task.status === 'done' && !task.archivedAt && !task.deliveredAt && (
+            <button type="button" onClick={() => void deliverTask(task.id)} className="flex min-h-10 items-center gap-2 rounded-[10px] px-3 text-sm font-medium text-green-700 hover:bg-green-50">
+              <Icon name="send" size={16} />
+              {t('delivered.deliver')}
+            </button>
+          )}
+          {task.status === 'done' && !task.archivedAt && !task.deliveredAt && (
             <button type="button" onClick={() => void archiveTask(task.id)} className="flex min-h-10 items-center gap-2 rounded-[10px] px-3 text-sm font-medium text-slate-700 hover:bg-slate-100">
               <Icon name="archive" size={16} />
               {t('archive.archive')}

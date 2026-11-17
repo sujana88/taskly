@@ -121,7 +121,7 @@ const en = {
     clientTimes: 'Client local times',
   },
   clock: { working: 'Working', off: 'Off hours' },
-  view: { label: 'View', kanban: 'Kanban', list: 'List', calendar: 'Calendar', cancelled: 'Cancelled', archive: 'Archive' },
+  view: { label: 'View', kanban: 'Kanban', list: 'List', calendar: 'Calendar', cancelled: 'Cancelled', archive: 'Archive', delivered: 'Delivered' },
   cancelled: {
     cancel: 'Cancel',
     cancelTask: 'Cancel {{title}}',
@@ -136,6 +136,16 @@ const en = {
     confirmBodyTime: 'The task moves to Cancelled and the {{time}} logged on it is removed, so it is not billed to the client. If you restore it later, it starts again from 0h 00m.',
     keep: 'Keep task',
     confirm: 'Cancel task',
+  },
+  delivered: {
+    deliver: 'Delivered',
+    deliverTask: 'Mark as delivered: {{title}}',
+    badge: 'Delivered',
+    archived: 'Delivered on',
+    deliveredOn: 'Delivered to the client on {{date}}. It is hidden from the board, list and calendar.',
+    hint: 'Finished tasks handed over to the client. They still count in reports and timesheets. Restore one to put it back in Done.',
+    emptyTitle: 'No delivered tasks',
+    emptyBody: 'Use Delivered on a finished task in the Done column once it is handed over to the client.',
   },
   archive: {
     archive: 'Archive',
@@ -649,7 +659,7 @@ const id: Dict = {
     clientTimes: 'Waktu lokal klien',
   },
   clock: { working: 'Jam kerja', off: 'Di luar jam kerja' },
-  view: { label: 'Tampilan', kanban: 'Kanban', list: 'Daftar', calendar: 'Kalender', cancelled: 'Dibatalkan', archive: 'Arsip' },
+  view: { label: 'Tampilan', kanban: 'Kanban', list: 'Daftar', calendar: 'Kalender', cancelled: 'Dibatalkan', archive: 'Arsip', delivered: 'Terkirim' },
   cancelled: {
     cancel: 'Batalkan',
     cancelTask: 'Batalkan {{title}}',
@@ -664,6 +674,16 @@ const id: Dict = {
     confirmBodyTime: 'Tugas dipindah ke Dibatalkan dan waktu {{time}} yang tercatat dihapus, sehingga tidak ditagihkan ke klien. Bila dikembalikan nanti, hitungannya mulai lagi dari 0h 00m.',
     keep: 'Jangan batalkan',
     confirm: 'Batalkan tugas',
+  },
+  delivered: {
+    deliver: 'Terkirim',
+    deliverTask: 'Tandai terkirim: {{title}}',
+    badge: 'Terkirim',
+    archived: 'Dikirim pada',
+    deliveredOn: 'Dikirim ke klien pada {{date}}. Tugas ini tidak tampil di board, daftar dan kalender.',
+    hint: 'Tugas selesai yang sudah dikirim ke klien. Tetap dihitung di laporan dan timesheet. Kembalikan untuk menaruhnya lagi di kolom Selesai.',
+    emptyTitle: 'Belum ada tugas yang terkirim',
+    emptyBody: 'Klik Terkirim pada tugas di kolom Selesai setelah hasilnya diserahkan ke klien.',
   },
   archive: {
     archive: 'Arsipkan',
