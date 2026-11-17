@@ -22,7 +22,7 @@ async function newInvoice(page: Page, client: string) {
   const dialog = page.getByRole('dialog')
   await dialog.getByRole('combobox').first().selectOption({ label: client })
   await dialog.getByRole('button', { name: /Create draft|Buat draf/ }).click()
-  await expect(page.getByTestId('invoice-title')).toHaveText(/INV-2026-\d{3}/)
+  await expect(page.getByTestId('invoice-title')).toHaveText(/INV-2026\d{4}/)
   return page.url()
 }
 
@@ -63,7 +63,7 @@ test('sends a polite message with the details, then offers to mark it as sent', 
   await expect(panel.getByTestId('wa-to')).toHaveText('Lena · +49 151 2345678')
   const message = panel.getByTestId('wa-message')
   // A Berlin client gets English; every line, the total and the signature are in.
-  await expect(message).toHaveValue(/^Hello Lena,\n\nI hope you are doing well\. Please find below the details of invoice \*INV-2026-001\* from Demo Design Studio\./)
+  await expect(message).toHaveValue(/^Hello Lena,\n\nI hope you are doing well\. Please find below the details of invoice \*INV-20260001\* from Demo Design Studio\./)
   await expect(message).toHaveValue(/Hero section redesign \(Website refresh\)\n {3}4,17 Hours × € 45 = € 187,65/)
   await expect(message).toHaveValue(/\*Total due: € [\d.,]+\*/)
   await expect(message).toHaveValue(/Kind regards,\nDemo Freelancer\nDemo Design Studio\n\+62 812 3456 7890$/)
@@ -94,9 +94,9 @@ test('makes an image of the invoice to send', async ({ page }) => {
   await page.getByTestId('wa-tab').click()
   const panel = page.getByTestId('wa-panel')
   await panel.getByRole('button', { name: 'Invoice image' }).click()
-  await expect(panel.getByTestId('wa-message')).toHaveValue(/^Hello Lena, please find attached invoice \*INV-2026-001\* for \*€ [\d.,]+\*, due on \*26 Nov 2026\*\./)
+  await expect(panel.getByTestId('wa-message')).toHaveValue(/^Hello Lena, please find attached invoice \*INV-20260001\* for \*€ [\d.,]+\*, due on \*26 Nov 2026\*\./)
   const [download] = await Promise.all([page.waitForEvent('download'), panel.getByRole('button', { name: 'Download image' }).click()])
-  expect(download.suggestedFilename()).toBe('INV-2026-001.png')
+  expect(download.suggestedFilename()).toBe('INV-20260001.png')
   const path = `${shots}/62-whatsapp-invoice-image.png`
   await download.saveAs(path)
   const { size } = await import('node:fs').then((fs) => fs.statSync(path))

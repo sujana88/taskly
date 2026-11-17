@@ -110,16 +110,19 @@ export function invoiceTotals(inv: Pick<Invoice, 'items' | 'discount' | 'taxRate
   return { subtotal, discount, taxable, tax, total }
 }
 
-/** "INV-" + 2026 → "INV-2026-004" when 001–003 exist for that year (other formats are ignored). */
+/**
+ * "INV-" + 2026 → "INV-20260004" when 0001–0003 exist for that year. Numbers in the older
+ * "INV-2026-003" style keep the count going; other formats are ignored.
+ */
 export function nextInvoiceNumber(prefix: string, existing: string[], year: number): string {
-  const head = `${prefix}${year}-`
+  const head = `${prefix}${year}`
   let max = 0
   for (const n of existing) {
     if (!n.startsWith(head)) continue
-    const rest = n.slice(head.length)
-    if (/^\d+$/.test(rest)) max = Math.max(max, Number(rest))
+    const rest = n.slice(head.length).replace(/^-/, '')
+    if (/^\d{1,6}$/.test(rest)) max = Math.max(max, Number(rest))
   }
-  return `${head}${String(max + 1).padStart(3, '0')}`
+  return `${head}${String(max + 1).padStart(4, '0')}`
 }
 
 /** "2026-11-16" + 14 → "2026-11-30" (calendar days, no time zone involved). */

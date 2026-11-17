@@ -38,9 +38,11 @@ describe('invoice totals', () => {
 
 describe('numbers and dates', () => {
   it('continues the yearly sequence', () => {
-    expect(nextInvoiceNumber('INV-', [], 2026)).toBe('INV-2026-001')
-    expect(nextInvoiceNumber('INV-', ['INV-2026-001', 'INV-2026-007', 'INV-2025-020', 'custom'], 2026)).toBe('INV-2026-008')
-    expect(nextInvoiceNumber('', ['2026-099'], 2026)).toBe('2026-100')
+    expect(nextInvoiceNumber('INV-', [], 2026)).toBe('INV-20260001')
+    expect(nextInvoiceNumber('INV-', ['INV-20260001', 'INV-20260007', 'INV-20250020', 'custom'], 2026)).toBe('INV-20260008')
+    // Older "INV-2026-012" numbers keep the count going.
+    expect(nextInvoiceNumber('INV-', ['INV-2026-012', 'INV-20260003'], 2026)).toBe('INV-20260013')
+    expect(nextInvoiceNumber('', ['20260099'], 2026)).toBe('20260100')
   })
 
   it('adds calendar days across months', () => {

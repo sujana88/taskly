@@ -56,10 +56,13 @@ function Editor({ stored }: { stored: Invoice }) {
   const [draft, setDraft] = useState<Invoice>(stored)
   const [mode, setMode] = useState<'edit' | 'preview' | 'whatsapp'>(stored.status === 'draft' ? 'edit' : 'preview')
   const [confirm, setConfirm] = useState<'delete' | 'void' | null>(null)
+  if (mode === 'whatsapp' && (stored.status === 'paid' || stored.status === 'void')) setMode('preview')
   const [timeOpen, setTimeOpen] = useState(false)
   const ids = { client: useId(), name: useId(), details: useId(), number: useId(), issue: useId(), due: useId(), currency: useId(), tax: useId(), discount: useId(), notes: useId() }
   const today = todayIn(myTimezone())
   const locked = stored.status !== 'draft'
+  // Paid or void: nothing is owed, so the invoice is not sent on WhatsApp any more.
+  const settled = stored.status === 'paid' || stored.status === 'void'
   const countries = useMemo(() => new Map(countryOptions(lang).map((c) => [c.iso, c.name])), [lang])
 
   // Status changes come from the buttons (saved straight away): follow them in the draft.
@@ -153,8 +156,10 @@ function Editor({ stored }: { stored: Invoice }) {
             <button
               type="button"
               aria-pressed={mode === 'whatsapp'}
+              disabled={settled}
+              title={settled ? t(`invoices.wa.closed.${stored.status}`) : undefined}
               onClick={() => setMode('whatsapp')}
-              className={`flex min-h-10 items-center gap-2 rounded-[10px] px-4 text-sm font-semibold text-white shadow-[0_6px_16px_-8px_rgba(37,211,102,0.9)] ${
+              className={`flex min-h-10 items-center gap-2 rounded-[10px] px-4 text-sm font-semibold text-white shadow-[0_6px_16px_-8px_rgba(37,211,102,0.9)] disabled:cursor-not-allowed disabled:bg-slate-300 disabled:shadow-none ${
                 mode === 'whatsapp' ? 'bg-[#1aa34a] ring-2 ring-green-200' : 'bg-[#25D366] hover:bg-[#1ebe5b]'
               }`}
               data-testid="wa-tab"
@@ -214,7 +219,10 @@ function Editor({ stored }: { stored: Invoice }) {
               {t('invoices.editor.toDraft')}
             </button>
           )}
-          <p className="m-0 basis-full text-xs text-muted">{t('invoices.editor.printHint')}</p>
+          <p className="m-0 basis-full text-xs text-muted">
+            {t('invoices.editor.printHint')}
+            {settled && <span data-testid="wa-closed"> {t(`invoices.wa.closed.${stored.status}`)}</span>}
+          </p>
         </div>
       </div>
 

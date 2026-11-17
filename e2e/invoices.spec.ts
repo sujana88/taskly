@@ -37,7 +37,7 @@ test('settings: tax rates per country and invoice defaults are saved', async ({ 
   await setUpTaxes(page)
   await page.getByLabel('Payment terms (days)').fill('30')
   await page.getByLabel('Payment details').fill('Bank BCA 123 456 7890 a.n. Demo Freelancer')
-  await expect(page.getByText('Invoice numbers look like INV-2026-001.')).toBeVisible()
+  await expect(page.getByText('Invoice numbers look like INV-20260001.')).toBeVisible()
   await page.getByRole('button', { name: 'Save invoice defaults' }).click()
   await page.screenshot({ path: `${shots}/50-settings.png`, fullPage: true })
 
@@ -85,7 +85,7 @@ test('creates an invoice from tracked time, sends it, and prints it as PDF', asy
   await dialog.getByRole('button', { name: 'Create draft' }).click()
 
   await expect(page).toHaveURL(/#\/invoices\/[\w-]+$/)
-  await expect(page.getByTestId('invoice-title')).toHaveText('INV-2026-001')
+  await expect(page.getByTestId('invoice-title')).toHaveText('INV-20260001')
   await expect(page.getByTestId('invoice-status')).toHaveText('Draft')
   // Berlin client → German rate picked automatically; lines are hours × € 45.
   await expect(page.getByLabel('Tax')).toHaveValue(/.+/)
@@ -134,14 +134,14 @@ test('creates an invoice from tracked time, sends it, and prints it as PDF', asy
   await page.emulateMedia({ media: 'print' })
   await expect(page.locator('#root')).toBeHidden()
   await expect(page.locator('.print-root [data-testid="invoice-doc"]')).toBeVisible()
-  await page.pdf({ path: `${shots}/INV-2026-001.pdf`, format: 'A4', printBackground: true, preferCSSPageSize: true })
+  await page.pdf({ path: `${shots}/INV-20260001.pdf`, format: 'A4', printBackground: true, preferCSSPageSize: true })
   await page.screenshot({ path: `${shots}/55-invoice-print.png`, fullPage: true })
   await page.emulateMedia({ media: 'screen' })
 
   await page.getByRole('link', { name: 'All invoices' }).click()
   const row = page.getByTestId('invoice-row')
   await expect(row).toHaveCount(1)
-  await expect(row).toContainText('INV-2026-001')
+  await expect(row).toContainText('INV-20260001')
   await expect(row).toContainText('Sent')
   await expect(page.getByTestId('tile-sent')).toContainText('1')
   await page.screenshot({ path: `${shots}/56-invoices-list.png`, fullPage: true })
@@ -152,6 +152,9 @@ test('creates an invoice from tracked time, sends it, and prints it as PDF', asy
   await expect(page.getByTestId('invoice-status')).toHaveText('Paid')
   await expect(page.getByTestId('invoice-doc').first().getByTestId('invoice-stamp')).toHaveText('PAID')
   await expect(page.getByTestId('invoice-doc').first().getByTestId('doc-amount-due')).toHaveText('€ 0')
+  // Paid: no more WhatsApp reminders.
+  await expect(page.getByTestId('wa-tab')).toBeDisabled()
+  await expect(page.getByTestId('wa-closed')).toHaveText('This invoice is paid, so it is not sent on WhatsApp any more.')
 })
 
 test('a second invoice continues the numbering and warns about a period already billed', async ({ page }) => {
@@ -160,13 +163,13 @@ test('a second invoice continues the numbering and warns about a period already 
     await page.getByRole('button', { name: 'New invoice' }).first().click()
     const dialog = page.getByRole('dialog', { name: 'New invoice' })
     await dialog.getByLabel('Client').selectOption({ label: 'Nordlicht Studio · EUR' })
-    if (i === 1) await expect(dialog.getByRole('alert')).toContainText('Part of this period is already billed in INV-2026-001.')
+    if (i === 1) await expect(dialog.getByRole('alert')).toContainText('Part of this period is already billed in INV-20260001.')
     await dialog.getByRole('button', { name: 'Create draft' }).click()
-    await expect(page.getByTestId('invoice-title')).toHaveText(`INV-2026-00${i + 1}`)
+    await expect(page.getByTestId('invoice-title')).toHaveText(`INV-2026000${i + 1}`)
     await page.getByRole('link', { name: 'All invoices' }).click()
   }
   // Drafts can be deleted.
-  await page.getByTestId('invoice-row').filter({ hasText: 'INV-2026-002' }).click()
+  await page.getByTestId('invoice-row').filter({ hasText: 'INV-20260002' }).click()
   await page.getByRole('button', { name: 'Delete draft' }).click()
   await page.getByRole('dialog', { name: 'Delete draft' }).getByRole('button', { name: 'Delete draft' }).click()
   await expect(page.getByTestId('invoice-row')).toHaveCount(1)

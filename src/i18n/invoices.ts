@@ -148,6 +148,7 @@ export const invoicesEn = {
       setupBusiness: 'Add your company name and logo on your profile so they appear on the invoice.',
     },
     wa: {
+      closed: { paid: 'This invoice is paid, so it is not sent on WhatsApp any more.', void: 'This invoice is void, so it is not sent on WhatsApp.' },
       title: 'Send via WhatsApp',
       subtitle: "The invoice details or an image of the invoice, straight to the client's WhatsApp.",
       to: 'To',
@@ -354,6 +355,7 @@ export const invoicesId: InvoicesDict = {
       setupBusiness: 'Isi nama perusahaan dan logo di profil Anda supaya tampil di invoice.',
     },
     wa: {
+      closed: { paid: 'Invoice ini sudah lunas, jadi tidak dikirim lewat WhatsApp lagi.', void: 'Invoice ini batal, jadi tidak dikirim lewat WhatsApp.' },
       title: 'Kirim lewat WhatsApp',
       subtitle: 'Rincian tagihan atau gambar invoice, langsung ke WhatsApp klien.',
       to: 'Kepada',
