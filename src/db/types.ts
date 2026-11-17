@@ -59,7 +59,7 @@ export interface Task {
   tags: string[]
   /** UTC ISO string. */
   dueAt?: string
-  /** Optional label shown as a coloured pill: low (green), medium (blue), high (red). */
+  /** Optional label shown as a coloured pill: low (orange), medium (blue), high (red). */
   priority?: Priority
   subtasks: Subtask[]
   createdAt: string

@@ -27,9 +27,9 @@ test('a task gets a Low / Medium / High priority label, shown at the top right o
 
   const pill = card('Hero section redesign').getByTestId('priority-pill')
   await expect(pill).toHaveText('High')
-  // Red for High, green for Low, blue for Medium.
+  // Red for High, orange for Low, blue for Medium.
   await expect(pill).toHaveClass(/bg-red-600/)
-  await expect(card('Menu photo retouch').getByTestId('priority-pill')).toHaveClass(/bg-green-600/)
+  await expect(card('Menu photo retouch').getByTestId('priority-pill')).toHaveClass(/bg-orange-500/)
   await expect(card('Pricing page v2').getByTestId('priority-pill')).toHaveClass(/bg-blue-600/)
   // Top right: the pill's right edge lines up with the card's padding.
   const c = (await card('Hero section redesign').boundingBox())!

@@ -281,7 +281,6 @@ function ClientForm({ client, onDone }: { client?: Client; onDone: () => void })
               autoComplete="off"
               className="w-full resize-y rounded-[10px] border border-line bg-white px-3 py-2.5 text-[15px] leading-relaxed outline-none focus:border-accent"
             />
-            <p className="m-0 text-[13px] text-muted">{t('clients.form.addressHint')}</p>
           </div>
           <div className="flex flex-col gap-1.5">
             <label htmlFor={ids.phone} className={label}>
