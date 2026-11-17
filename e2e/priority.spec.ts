@@ -7,7 +7,7 @@ test.beforeEach(async ({ page }) => {
   await page.goto('/#/tasks')
 })
 
-test('a task gets a Low / Medium / High label, shown at the top right of its card', async ({ page }) => {
+test('a task gets a Low / Medium / High priority label, shown at the top right of its card', async ({ page }) => {
   const card = (title: string) => page.getByTestId('task-card').filter({ hasText: title })
   await expect(card('Hero section redesign').getByTestId('priority-pill')).toHaveCount(0)
 
@@ -27,10 +27,10 @@ test('a task gets a Low / Medium / High label, shown at the top right of its car
 
   const pill = card('Hero section redesign').getByTestId('priority-pill')
   await expect(pill).toHaveText('High')
-  // Blue for High (not red), green for Low, yellow for Medium.
-  await expect(pill).toHaveClass(/bg-blue-600/)
+  // Red for High, green for Low, blue for Medium.
+  await expect(pill).toHaveClass(/bg-red-600/)
   await expect(card('Menu photo retouch').getByTestId('priority-pill')).toHaveClass(/bg-green-600/)
-  await expect(card('Pricing page v2').getByTestId('priority-pill')).toHaveClass(/bg-amber-400/)
+  await expect(card('Pricing page v2').getByTestId('priority-pill')).toHaveClass(/bg-blue-600/)
   // Top right: the pill's right edge lines up with the card's padding.
   const c = (await card('Hero section redesign').boundingBox())!
   const p = (await pill.boundingBox())!

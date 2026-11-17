@@ -9,6 +9,10 @@ import { formatClock, formatInZone, formatMinutes, myTimezone } from '../../lib/
 import { cleanGuard, guardable } from '../../lib/timerGuard'
 import { useCurrentUser } from '../auth/useCurrentUser'
 import { ClientChip } from '../tasks/TaskCard'
+import { TaskDrawer } from '../tasks/TaskDrawer'
+import { createTask } from '../tasks/actions'
+import { ClientDialog } from '../clients/ClientDialog'
+import type { Client } from '../../db/types'
 import { useTaskData } from '../tasks/useTaskData'
 import { entryMs, setEntryNote } from '../timer/actions'
 import { notificationsSupported } from '../timer/alerts'
@@ -208,6 +212,8 @@ export function FocusPage() {
           </div>
 
           <MemoField taskId={task?.id ?? null} running={active && !active.endedAt && active.taskId === task?.id ? active : undefined} />
+
+          <Shortcuts task={task} client={task ? data.clientFor(task) : undefined} data={data} onCreated={(id) => pickTask(id)} />
 
           {mode === 'standard' ? (
             <div className="grid w-full max-w-md gap-2">
@@ -473,6 +479,64 @@ function MemoField({ taskId, running }: { taskId: string | null; running?: { id:
         className="w-full resize-none rounded-[10px] border border-green-100 bg-green-50/70 px-3 py-2.5 text-[15px] leading-relaxed outline-none focus:border-green-500 focus:bg-white disabled:cursor-not-allowed disabled:opacity-60"
         data-testid="focus-memo"
       />
+    </div>
+  )
+}
+
+/**
+ * Two shortcuts so the task and the client can be edited without leaving the Focus page:
+ * Tasks opens the picked task (or a new one), Clients opens its client (or a new client).
+ */
+function Shortcuts({ task, client, data, onCreated }: { task?: { id: string; title: string }; client?: Client; data: ReturnType<typeof useTaskData>; onCreated: (id: string) => void }) {
+  const { t } = useTranslation()
+  const [taskOpen, setTaskOpen] = useState<string | null>(null)
+  const [justCreated, setJustCreated] = useState<string | null>(null)
+  const [clientOpen, setClientOpen] = useState(false)
+
+  const openTask = async () => {
+    if (task) return setTaskOpen(task.id)
+    const projectId = data.projects[0]?.id
+    if (!projectId) return
+    const id = await createTask({ title: t('newTaskTitle'), status: 'todo', projectId })
+    setJustCreated(id)
+    onCreated(id)
+    setTaskOpen(id)
+  }
+
+  // A new task shows up in the data a moment after it is created: open the drawer once it is there.
+  const shownTask = taskOpen && data.allTasks.some((x) => x.id === taskOpen) ? taskOpen : null
+  const btn = 'flex min-h-11 flex-1 items-center justify-center gap-2 rounded-xl px-4 text-sm font-bold text-white shadow-sm transition-colors'
+  return (
+    <div className="grid w-full max-w-md grid-cols-2 gap-2" data-testid="focus-shortcuts">
+      <button
+        type="button"
+        onClick={() => void openTask()}
+        title={task ? t('focus.openTask', { task: task.title }) : t('focus.newTask')}
+        className={`${btn} bg-orange-500 hover:bg-orange-600`}
+      >
+        <Icon name="tasks" size={16} />
+        {t('nav.tasks')}
+      </button>
+      <button
+        type="button"
+        onClick={() => setClientOpen(true)}
+        title={client ? t('focus.openClient', { client: client.name }) : t('clients.add')}
+        className={`${btn} bg-green-600 hover:bg-green-700`}
+      >
+        <Icon name="clients" size={16} />
+        {t('nav.clients')}
+      </button>
+
+      <TaskDrawer
+        data={data}
+        taskId={shownTask}
+        autoFocusTitle={shownTask !== null && shownTask === justCreated}
+        onClose={() => {
+          setTaskOpen(null)
+          setJustCreated(null)
+        }}
+      />
+      <ClientDialog open={clientOpen} client={client} onClose={() => setClientOpen(false)} />
     </div>
   )
 }

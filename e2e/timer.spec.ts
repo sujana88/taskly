@@ -169,3 +169,38 @@ test('a memo on the Focus page is saved on the time entry, in both modes', async
   await expect(entries.nth(1)).toContainText('Timer')
   await expect(entries.nth(1)).toContainText('Comparison table layout and FAQ')
 })
+
+test('Tasks and Clients buttons on the Focus page open their forms, in both modes', async ({ page }) => {
+  await page.goto('/#/focus')
+  for (const mode of ['Standard', 'Pomodoro']) {
+    await page.getByRole('button', { name: mode, exact: true }).click()
+    await expect(page.getByTestId('focus-shortcuts').getByRole('button')).toHaveText(['Tasks', 'Clients'])
+  }
+  await page.getByLabel('Working on').selectOption({ label: 'Pricing page v2' })
+  await page.screenshot({ path: `${shots}/79-focus-shortcuts.png` })
+
+  // Tasks: the picked task, ready to edit.
+  await page.getByTestId('focus-shortcuts').getByRole('button', { name: 'Tasks' }).click()
+  const drawer = page.getByRole('dialog', { name: 'Pricing page v2' })
+  await expect(drawer.getByLabel('Title')).toHaveValue('Pricing page v2')
+  await page.keyboard.press('Escape')
+  await expect(drawer).toBeHidden()
+
+  // Clients: that task's client.
+  await page.getByTestId('focus-shortcuts').getByRole('button', { name: 'Clients' }).click()
+  const client = page.getByRole('dialog', { name: 'Edit Nordlicht Studio' })
+  await expect(client.getByLabel('Client name')).toHaveValue('Nordlicht Studio')
+  await client.getByRole('button', { name: 'Cancel' }).click()
+
+  // No task picked: Tasks starts a new one and picks it, Clients adds a client.
+  await page.getByLabel('Working on').selectOption({ index: 0 })
+  await page.getByTestId('focus-shortcuts').getByRole('button', { name: 'Tasks' }).click()
+  const fresh = page.getByRole('dialog', { name: 'Untitled task' })
+  await fresh.getByLabel('Title').fill('Kick-off call notes')
+  await fresh.getByLabel('Title').press('Enter')
+  await page.keyboard.press('Escape')
+  await expect(page.getByLabel('Working on').locator('option:checked')).toHaveText('Kick-off call notes')
+  await page.getByLabel('Working on').selectOption({ index: 0 })
+  await page.getByTestId('focus-shortcuts').getByRole('button', { name: 'Clients' }).click()
+  await expect(page.getByRole('dialog', { name: 'Add client' })).toBeVisible()
+})
