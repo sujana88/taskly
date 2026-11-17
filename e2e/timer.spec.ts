@@ -141,7 +141,8 @@ test('timer safety settings are saved', async ({ page }) => {
 test('a memo on the Focus page is saved on the time entry, in both modes', async ({ page }) => {
   await page.goto('/#/focus')
   await page.getByRole('button', { name: 'Standard' }).click()
-  await expect(page.getByText('Time Tracking')).toBeVisible()
+  await expect(page.getByText('Time tracking')).toBeVisible()
+  await expect(page.getByTestId('standard-info')).toHaveText('Counts up. Stop when you are done.')
   await page.getByLabel('Working on').selectOption({ label: 'Pricing page v2' })
   const memo = page.getByLabel('Memo')
   await memo.fill('Comparison table layout')

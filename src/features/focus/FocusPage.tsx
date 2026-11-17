@@ -111,7 +111,12 @@ export function FocusPage() {
           </div>
 
           {mode === 'standard' ? (
+            <>
+            <p className="m-0 flex min-h-12 w-full max-w-md items-center justify-center rounded-xl bg-slate-100 px-3 text-center text-[13px] font-semibold text-slate-600 sm:text-sm" data-testid="standard-info">
+              {t('focus.standardInfo')}
+            </p>
             <StandardClock elapsed={elapsed} running={standardOn} long={long} startedAt={standardOn ? active.startedAt : undefined} remindHours={guard.remindHours} />
+            </>
           ) : (
           <>
           <div role="group" aria-label={t('focus.phaseLabel')} className="flex w-full max-w-md gap-1 rounded-xl bg-slate-100 p-1">
