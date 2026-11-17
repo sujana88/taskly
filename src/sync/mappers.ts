@@ -23,6 +23,7 @@ export interface ClientRow {
   currency: string
   contact_name: string | null
   contact_email: string | null
+  address?: string | null
   contact_phone: string | null
   website: string | null
   note: string | null
@@ -154,6 +155,7 @@ export function clientFromRow(r: ClientRow): Client {
     archived: r.archived,
     ...(r.contact_name ? { contactName: r.contact_name } : {}),
     ...(r.contact_email ? { contactEmail: r.contact_email } : {}),
+    ...(r.address ? { address: r.address } : {}),
     ...(r.contact_phone ? { contactPhone: r.contact_phone } : {}),
     ...(r.website ? { website: r.website } : {}),
     ...(r.note ? { note: r.note } : {}),
@@ -174,6 +176,7 @@ export function clientToRow(c: Client, userId: string): ClientRow {
     currency: c.currency,
     contact_name: c.contactName?.trim() || null,
     contact_email: c.contactEmail?.trim() || null,
+    address: c.address?.trim() || null,
     contact_phone: c.contactPhone?.trim() || null,
     website: c.website?.trim() || null,
     note: c.note?.trim() || null,
@@ -273,7 +276,7 @@ export function profileInvoicing(r: ProfileRow): InvoiceSettings {
     notes: r.invoice_notes ?? '',
     paymentDetails: r.payment_details ?? '',
     taxRates: (r.tax_rates ?? []).map((x) => ({ ...x, rate: Number(x.rate) })),
-    units: r.invoice_units ?? ['Hour', 'Hours', 'Service', 'Project(s)'],
+    units: r.invoice_units ?? ['Hour', 'Hours', 'Service(s)', 'Project(s)'],
   }
 }
 

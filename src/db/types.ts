@@ -21,6 +21,8 @@ export interface Client {
   /** Who receives updates, e.g. "Lena". Optional. */
   contactName?: string
   contactEmail?: string
+  /** Optional postal address, printed on invoices. */
+  address?: string
   /** Optional, e.g. "+62 812 3456 7890". */
   contactPhone?: string
   /** Optional, always stored with http(s)://. */

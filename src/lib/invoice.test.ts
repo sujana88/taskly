@@ -136,8 +136,8 @@ describe('units', () => {
     expect(timeUnit(['Pcs', 'Jam'])).toBe('Jam')
     expect(timeUnit(['Pcs', 'Shrimp'])).toBe('Pcs')
     expect(cleanUnits([' Hour ', 'hour', 'Pcs', '', 'Man  day'])).toEqual(['Hour', 'Pcs', 'Man day'])
-    expect(unitsOf({ units: [] })).toEqual(['Hour', 'Hours', 'Service', 'Project(s)'])
-    expect(timeUnit(['Hour', 'Hours', 'Service', 'Project(s)'])).toBe('Hours')
+    expect(unitsOf({ units: [] })).toEqual(['Hour', 'Hours', 'Service(s)', 'Project(s)'])
+    expect(timeUnit(['Hour', 'Hours', 'Service(s)', 'Project(s)'])).toBe('Hours')
     expect(timeUnit(['Hour', 'Service'])).toBe('Hour')
     const { unitLabel, unitOption } = await import('./invoice')
     expect(unitLabel('Hours', 'id')).toBe('Jam')
@@ -145,7 +145,7 @@ describe('units', () => {
     expect(unitLabel('Hours', 'en')).toBe('Hours')
     expect(unitLabel('Sesi foto', 'id')).toBe('Sesi foto')
     expect(unitLabel(undefined, 'id')).toBe('')
-    const list = ['Hour', 'Hours', 'Service', 'Project(s)']
+    const list = ['Hour', 'Hours', 'Service(s)', 'Project(s)']
     expect(list.map((u) => unitOption(u, 'id', list))).toEqual(['Jam · Hour', 'Jam · Hours', 'Layanan', 'Proyek'])
     expect(unitOption('Hours', 'id', ['Hours', 'Project'])).toBe('Jam')
     expect(unitOption('Hours', 'en', list)).toBe('Hours')

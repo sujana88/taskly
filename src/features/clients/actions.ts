@@ -14,6 +14,7 @@ export interface ClientInput {
   currency: string
   contactName?: string
   contactEmail?: string
+  address?: string
   contactPhone?: string
   website?: string
   note?: string
@@ -60,6 +61,7 @@ function clean(input: ClientInput): ClientInput {
     workHours: normHours(input.workHours),
     contactName: opt(input.contactName),
     contactEmail: opt(input.contactEmail),
+    address: opt(input.address)?.slice(0, 600),
     contactPhone: opt(input.contactPhone),
     website: opt(normalizeWebsite(input.website)),
     note: opt(input.note),
@@ -81,7 +83,7 @@ export async function updateClient(id: string, input: ClientInput): Promise<void
   const c = clean(input)
   await db.clients.where('id').equals(id).modify((row) => {
     Object.assign(row, c)
-    for (const k of ['contactName', 'contactEmail', 'contactPhone', 'website', 'note'] as const) if (c[k] === undefined) delete row[k]
+    for (const k of ['contactName', 'contactEmail', 'address', 'contactPhone', 'website', 'note'] as const) if (c[k] === undefined) delete row[k]
   })
 }
 
@@ -118,6 +120,7 @@ export function toInput(c: Client): ClientInput {
     currency: c.currency.trim().toUpperCase(),
     contactName: c.contactName ?? '',
     contactEmail: c.contactEmail ?? '',
+    address: c.address ?? '',
     contactPhone: c.contactPhone ?? '',
     website: c.website ?? '',
     note: c.note ?? '',

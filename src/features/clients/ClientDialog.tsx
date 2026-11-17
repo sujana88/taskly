@@ -159,7 +159,7 @@ export function PhoneField({ id, value, timezone, invalid, onChange, roomy = fal
 function ClientForm({ client, onDone }: { client?: Client; onDone: () => void }) {
   const { t, i18n } = useTranslation()
   const lang = i18n.resolvedLanguage ?? 'en'
-  const ids = { name: useId(), tz: useId(), rate: useId(), cur: useId(), form: useId(), contact: useId(), email: useId(), phone: useId(), website: useId(), note: useId() }
+  const ids = { name: useId(), tz: useId(), rate: useId(), cur: useId(), form: useId(), contact: useId(), email: useId(), address: useId(), phone: useId(), website: useId(), note: useId() }
   const [form, setForm] = useState<ClientInput>(() =>
     client ? toInput(client) : { name: '', color: CLIENT_COLORS[0], timezone: myTimezone(), workHours: DEFAULT_HOURS, hourlyRate: 0, currency: 'USD' },
   )
@@ -267,6 +267,21 @@ function ClientForm({ client, onDone }: { client?: Client; onDone: () => void })
               className={`${field} ${show('email') ? 'border-red-600' : ''}`}
             />
             {show('email') && <p className="m-0 text-[13px] text-red-700">{show('email')}</p>}
+          </div>
+          <div className="flex flex-col gap-1.5 sm:col-span-2">
+            <label htmlFor={ids.address} className={label}>
+              {t('clients.form.address')}
+            </label>
+            <textarea
+              id={ids.address}
+              value={form.address ?? ''}
+              onChange={(e) => setForm({ ...form, address: e.target.value })}
+              rows={2}
+              maxLength={600}
+              autoComplete="off"
+              className="w-full resize-y rounded-[10px] border border-line bg-white px-3 py-2.5 text-[15px] leading-relaxed outline-none focus:border-accent"
+            />
+            <p className="m-0 text-[13px] text-muted">{t('clients.form.addressHint')}</p>
           </div>
           <div className="flex flex-col gap-1.5">
             <label htmlFor={ids.phone} className={label}>

@@ -8,9 +8,9 @@ const uid = () => crypto.randomUUID()
 
 export const newItem = (unit?: string): InvoiceItem => ({ id: uid(), description: '', quantity: 1, ...(unit ? { unit } : {}), unitPrice: 0 })
 
-/** The client's contact lines, copied onto the invoice ("Lena Vogt", email, phone, website). */
+/** The client's contact lines, copied onto the invoice ("Lena Vogt", address, email, phone, website). */
 export function billToDetails(c: Client): string {
-  return [c.contactName, c.contactEmail, c.contactPhone, c.website].filter(Boolean).join('\n')
+  return [c.contactName, c.address, c.contactEmail, c.contactPhone, c.website].filter(Boolean).join('\n')
 }
 
 /** Lines for a client's billable, finished time in a period (my time zone decides the days). */
