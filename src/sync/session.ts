@@ -1,6 +1,7 @@
 /** Supabase Auth: sign up, log in, log out and restoring the session on start. */
 import type { User as SupabaseUser } from '@supabase/supabase-js'
 import { db } from '../db/db'
+import i18n from '../i18n'
 import type { User } from '../db/types'
 import { AuthError, useSession } from '../features/auth/auth'
 import { resetRedirectUrl } from '../lib/authLink'
@@ -52,7 +53,8 @@ export async function cloudSignUp(input: { name: string; email: string; password
   const { data, error } = await supabase!.auth.signUp({
     email: input.email.trim(),
     password: input.password,
-    options: { data: { name: input.name.trim() }, emailRedirectTo: redirectTo() },
+    // lang: the welcome email is sent in the language the person signed up in.
+    options: { data: { name: input.name.trim(), lang: i18n.resolvedLanguage === 'id' ? 'id' : 'en' }, emailRedirectTo: redirectTo() },
   })
   if (error) throw mapError(error)
   // With "confirm email" on, Supabase returns no session; an existing address returns a user with no identities.

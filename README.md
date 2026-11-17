@@ -152,7 +152,8 @@ Then use **"Try the demo account"** on the login page.
 4. In **Authentication → URL Configuration**, set the Site URL to where the app is hosted. Add it and
    `http://localhost:5173` to the redirect URLs, so confirmation and password-reset emails link back
    to the app.
-5. Optional: a new account can fill itself with demo data from the dashboard's **Import sample data**
+5. Welcome email (optional): deploy [`supabase/functions/send-welcome`](supabase/functions/send-welcome) and add the Edge Function secrets `RESEND_API_KEY` (your [Resend](https://resend.com) key) and `RESEND_FROM` (e.g. `Taskly <hello@yourdomain.com>`, on a domain verified in Resend). A database trigger calls it once for every new account, in the language the person signed up in. Without `RESEND_FROM`, Resend's test sender only delivers to your own Resend address.
+6. Optional: a new account can fill itself with demo data from the dashboard's **Import sample data**
    card, which calls `public.import_sample_data()`.
 
 ## Scripts
