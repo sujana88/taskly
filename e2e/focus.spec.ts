@@ -101,3 +101,29 @@ test('focus page works in Indonesian and on a phone', async ({ page }) => {
   expect(overflow).toBeLessThanOrEqual(0)
   await page.screenshot({ path: `${shots}/11-focus-mobile-id.png`, fullPage: true })
 })
+
+test('shows the task history next to the timer and moves a To-do task to In progress', async ({ page }) => {
+  await page.getByRole('link', { name: 'Focus', exact: true }).click()
+  await expect(page.getByTestId('task-history')).toHaveCount(0)
+  await page.getByRole('button', { name: 'Standard' }).click()
+
+  // A task with logged time lists it beside the timer.
+  await page.getByLabel('Working on').selectOption({ label: 'Hero section redesign' })
+  const history = page.getByTestId('task-history')
+  await expect(history.getByTestId('history-total')).toHaveText('4h 10m')
+  await expect(history.getByTestId('time-entry')).toHaveCount(2)
+
+  // A fresh To-do task has no history yet; starting the timer adds the running entry.
+  await page.getByLabel('Working on').selectOption({ label: 'Landing page wireframes' })
+  await expect(history).toContainText('No time logged on this task yet.')
+  await page.getByTestId('standard-start').click()
+  await expect(history.getByTestId('time-entry')).toHaveCount(1)
+  await page.screenshot({ path: `${shots}/focus-history.png` })
+  await page.clock.fastForward('05:00')
+  await page.getByTestId('standard-stop').click()
+  await expect(history.getByTestId('history-total')).toHaveText('0h 05m')
+
+  await page.getByRole('link', { name: 'Tasks', exact: true }).first().click()
+  await expect(page.getByTestId('column-in_progress').getByText('Landing page wireframes')).toBeVisible()
+  await expect(page.getByTestId('column-todo').getByText('Landing page wireframes')).toHaveCount(0)
+})

@@ -11,6 +11,15 @@ export async function runningEntry(): Promise<TimeEntry | undefined> {
   return db.timeEntries.filter((e) => !e.endedAt).first()
 }
 
+/** Time on a To-do task means work has begun: it moves to In progress (bottom of that column). */
+async function markStarted(taskId: string): Promise<void> {
+  const task = await db.tasks.get(taskId)
+  if (!task || task.status !== 'todo' || task.cancelledAt) return
+  const column = await db.tasks.where('status').equals('in_progress').toArray()
+  const last = column.reduce((m, t) => Math.max(m, t.order), 0)
+  await db.tasks.update(taskId, { status: 'in_progress', order: last + 1000, completedAt: undefined })
+}
+
 async function closeOpen(at: number): Promise<void> {
   const open = await db.timeEntries.filter((e) => !e.endedAt).toArray()
   for (const e of open) {
@@ -23,9 +32,10 @@ async function closeOpen(at: number): Promise<void> {
 /** Start tracking a task. Whatever was running stops first. */
 export async function startEntry(taskId: string, source: TimeEntry['source'] = 'timer', at = Date.now(), note?: string): Promise<string> {
   const id = crypto.randomUUID()
-  await db.transaction('rw', db.timeEntries, async () => {
+  await db.transaction('rw', db.timeEntries, db.tasks, async () => {
     await closeOpen(at)
     await db.timeEntries.add({ id, taskId, startedAt: iso(at), source, billable: true, ...(note ? { note } : {}) })
+    await markStarted(taskId)
   })
   return id
 }
@@ -40,7 +50,10 @@ export async function addManualEntry(taskId: string, start: number, end: number,
   if (!Number.isFinite(start) || !Number.isFinite(end) || end <= start) return undefined
   const id = crypto.randomUUID()
   const text = note?.trim().slice(0, 2000)
-  await db.timeEntries.add({ id, taskId, startedAt: iso(start), endedAt: iso(end), source: 'manual', billable: true, ...(text ? { note: text } : {}) })
+  await db.transaction('rw', db.timeEntries, db.tasks, async () => {
+    await db.timeEntries.add({ id, taskId, startedAt: iso(start), endedAt: iso(end), source: 'manual', billable: true, ...(text ? { note: text } : {}) })
+    await markStarted(taskId)
+  })
   return id
 }
 

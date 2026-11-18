@@ -33,6 +33,24 @@ describe('time entries', () => {
     expect((await runningEntry())?.taskId).toBe('t-pricing')
   })
 
+  it('moves a To-do task to In progress once time is logged on it', async () => {
+    await startEntry('t-wireframes', 'timer', T0)
+    const t = await db.tasks.get('t-wireframes')
+    expect(t?.status).toBe('in_progress')
+    const others = await db.tasks.where('status').equals('in_progress').toArray()
+    expect(t!.order).toBeGreaterThan(Math.max(...others.filter((x) => x.id !== t!.id).map((x) => x.order)))
+
+    await addManualEntry('t-retouch', T0 - 60 * MIN, T0 - 30 * MIN)
+    expect((await db.tasks.get('t-retouch'))?.status).toBe('in_progress')
+
+    // Other columns stay where they are, and so does a cancelled To-do task.
+    await startEntry('t-pricing', 'timer', T0 + MIN)
+    expect((await db.tasks.get('t-pricing'))?.status).toBe('in_revision')
+    await db.tasks.update('t-moodboard', { cancelledAt: new Date(T0).toISOString() })
+    await addManualEntry('t-moodboard', T0 - 60 * MIN, T0 - 30 * MIN)
+    expect((await db.tasks.get('t-moodboard'))?.status).toBe('todo')
+  })
+
   it('drops accidental entries shorter than five seconds', async () => {
     const before = (await entriesFor('t-hero')).length
     await startEntry('t-hero', 'timer', T0)

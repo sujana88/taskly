@@ -12,13 +12,15 @@ import { ClientChip } from '../tasks/TaskCard'
 import { TaskDrawer } from '../tasks/TaskDrawer'
 import { createTask } from '../tasks/actions'
 import { ClientDialog } from '../clients/ClientDialog'
-import type { Client } from '../../db/types'
+import type { Client, Task } from '../../db/types'
 import { useTaskData } from '../tasks/useTaskData'
 import { entryMs, setEntryNote } from '../timer/actions'
 import { notificationsSupported } from '../timer/alerts'
 import { choosePhase, pausePomodoro, resetPomodoro, setPomodoroTask, skipPhase, startPomodoro, startTaskTimer, stopTaskTimer } from '../timer/controller'
 import { localDay, useFocusMode, usePomodoro, type FocusMode } from '../timer/store'
 import { useRunningEntry } from '../timer/useRunningEntry'
+import { EntryList } from '../timer/TaskTimeSection'
+import type { TaskData } from '../tasks/useTaskData'
 
 const RING: Record<Phase, string> = { focus: 'stroke-accent', short: 'stroke-green-600', long: 'stroke-sky-600' }
 const CHIP: Record<Phase, string> = { focus: 'bg-accent-soft text-accent-strong', short: 'bg-green-100 text-green-800', long: 'bg-sky-100 text-sky-800' }
@@ -275,9 +277,40 @@ export function FocusPage() {
             </dl>
           </section>
           {mode === 'standard' ? <GuardCard /> : <Settings />}
+          {task && <TaskHistory task={task} data={data} now={now} />}
         </div>
       </div>
     </main>
+  )
+}
+
+/** Everything already logged on the chosen task, so you can see what was done before. */
+function TaskHistory({ task, data, now }: { task: Task; data: TaskData; now: number }) {
+  const { t } = useTranslation()
+  const entries = data.entries.filter((e) => e.taskId === task.id).sort((a, b) => b.startedAt.localeCompare(a.startedAt))
+  const totalMs = entries.reduce((sum, e) => sum + entryMs(e, now), 0)
+  return (
+    <section aria-labelledby="history-h" className="flex flex-col gap-2 card p-5" data-testid="task-history">
+      <div className="flex items-baseline justify-between gap-3">
+        <h2 id="history-h" className="m-0 text-base font-semibold">
+          {t('focus.history')}
+        </h2>
+        <span className="text-sm whitespace-nowrap tabular-nums">
+          <strong className="font-semibold" data-testid="history-total">
+            {formatMinutes(totalMs / 60_000)}
+          </strong>{' '}
+          <span className="text-muted">· {t('drawer.entries', { count: entries.length })}</span>
+        </span>
+      </div>
+      <p className="m-0 truncate text-[13px] text-muted" title={task.title}>
+        {task.title}
+      </p>
+      {entries.length ? (
+        <EntryList entries={entries} now={now} className="max-h-80 border-t border-line pt-1" />
+      ) : (
+        <p className="m-0 rounded-xl bg-slate-50 px-3 py-4 text-center text-[13px] text-muted">{t('focus.historyEmpty')}</p>
+      )}
+    </section>
   )
 }
 

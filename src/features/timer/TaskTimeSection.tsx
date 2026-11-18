@@ -2,7 +2,7 @@ import { useId, useState, type FormEvent } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
 import { Icon } from '../../components/Icon'
-import type { Task } from '../../db/types'
+import type { Task, TimeEntry } from '../../db/types'
 import { useNow } from '../../hooks/useNow'
 import { todayIn } from '../../lib/invoice'
 import { formatClock, formatInZone, formatMinutes, myTimezone } from '../../lib/time'
@@ -14,9 +14,7 @@ import { useRunningEntry } from './useRunningEntry'
 
 /** Time tracking inside the task drawer: start/stop, log time by hand, and the list of entries. */
 export function TaskTimeSection({ task, data }: { task: Task; data: TaskData }) {
-  const { t, i18n } = useTranslation()
-  const lang = i18n.resolvedLanguage ?? 'en'
-  const tz = myTimezone()
+  const { t } = useTranslation()
   const now = useNow(1000)
   const running = useRunningEntry()
   const headId = useId()
@@ -75,42 +73,51 @@ export function TaskTimeSection({ task, data }: { task: Task; data: TaskData }) 
         </button>
       )}
 
-      {entries.length > 0 && (
-        <ul className="m-0 flex max-h-64 list-none flex-col overflow-y-auto border-t border-slate-200 p-0 pt-1" aria-label={t('timer.entries')}>
-          {entries.map((e) => {
-            const when = formatInZone(e.startedAt, tz, lang, 'EEE d MMM, HH:mm')
-            return (
-              <li key={e.id} className="group flex flex-col py-1.5 text-[13px]" data-testid="time-entry">
-                <div className="flex min-h-8 items-center gap-3">
-                  <span className="min-w-0 flex-1 truncate text-slate-700">{when}</span>
-                  <span className="rounded-md bg-white px-1.5 py-0.5 text-xs text-slate-600 ring-1 ring-line">{t(`timer.source.${e.source}`)}</span>
-                  <span className={`w-16 text-right tabular-nums ${e.endedAt ? '' : 'font-semibold text-accent'}`}>{e.endedAt ? formatMinutes(entryMs(e) / 60_000) : formatClock(entryMs(e, now))}</span>
-                  <button
-                    type="button"
-                    disabled={!e.endedAt}
-                    onClick={() => void deleteEntry(e.id)}
-                    aria-label={t('timer.deleteEntry', { date: when })}
-                    className="flex size-8 items-center justify-center rounded-lg text-slate-500 opacity-60 group-hover:opacity-100 hover:bg-slate-200 hover:text-ink focus:opacity-100 disabled:invisible"
-                  >
-                    <Icon name="trash" size={14} />
-                  </button>
-                </div>
-                {e.note && <span className="line-clamp-2 pr-10 text-xs text-muted">{e.note}</span>}
-                {e.needsReview && (
-                  <div className="mt-1 flex flex-wrap items-center gap-2 rounded-lg bg-amber-50 px-2.5 py-1.5 text-xs text-amber-900" data-testid="needs-review">
-                    <Icon name="alert" size={13} />
-                    <span className="flex-1">{t('timer.needsReview')}</span>
-                    <button type="button" onClick={() => void markChecked(e.id)} className="min-h-7 rounded-md bg-white px-2 font-semibold text-amber-900 ring-1 ring-amber-200 hover:bg-amber-100">
-                      {t('timer.markChecked')}
-                    </button>
-                  </div>
-                )}
-              </li>
-            )
-          })}
-        </ul>
-      )}
+      <EntryList entries={entries} now={now} className="max-h-64 border-t border-slate-200 pt-1" />
     </section>
+  )
+}
+
+/** Time entries, newest first: when, how, how long, the note, and a review flag for auto-stopped time. */
+export function EntryList({ entries, now, className = '' }: { entries: TimeEntry[]; now: number; className?: string }) {
+  const { t, i18n } = useTranslation()
+  const lang = i18n.resolvedLanguage ?? 'en'
+  const tz = myTimezone()
+  if (!entries.length) return null
+  return (
+    <ul className={`m-0 flex list-none flex-col overflow-y-auto p-0 ${className}`} aria-label={t('timer.entries')}>
+      {entries.map((e) => {
+        const when = formatInZone(e.startedAt, tz, lang, 'EEE d MMM, HH:mm')
+        return (
+          <li key={e.id} className="group flex flex-col py-1.5 text-[13px]" data-testid="time-entry">
+            <div className="flex min-h-8 items-center gap-3">
+              <span className="min-w-0 flex-1 truncate text-slate-700">{when}</span>
+              <span className="rounded-md bg-white px-1.5 py-0.5 text-xs text-slate-600 ring-1 ring-line">{t(`timer.source.${e.source}`)}</span>
+              <span className={`w-16 text-right tabular-nums ${e.endedAt ? '' : 'font-semibold text-accent'}`}>{e.endedAt ? formatMinutes(entryMs(e) / 60_000) : formatClock(entryMs(e, now))}</span>
+              <button
+                type="button"
+                disabled={!e.endedAt}
+                onClick={() => void deleteEntry(e.id)}
+                aria-label={t('timer.deleteEntry', { date: when })}
+                className="flex size-8 items-center justify-center rounded-lg text-slate-500 opacity-60 group-hover:opacity-100 hover:bg-slate-200 hover:text-ink focus:opacity-100 disabled:invisible"
+              >
+                <Icon name="trash" size={14} />
+              </button>
+            </div>
+            {e.note && <span className="line-clamp-2 pr-10 text-xs text-muted">{e.note}</span>}
+            {e.needsReview && (
+              <div className="mt-1 flex flex-wrap items-center gap-2 rounded-lg bg-amber-50 px-2.5 py-1.5 text-xs text-amber-900" data-testid="needs-review">
+                <Icon name="alert" size={13} />
+                <span className="flex-1">{t('timer.needsReview')}</span>
+                <button type="button" onClick={() => void markChecked(e.id)} className="min-h-7 rounded-md bg-white px-2 font-semibold text-amber-900 ring-1 ring-amber-200 hover:bg-amber-100">
+                  {t('timer.markChecked')}
+                </button>
+              </div>
+            )}
+          </li>
+        )
+      })}
+    </ul>
   )
 }
 
