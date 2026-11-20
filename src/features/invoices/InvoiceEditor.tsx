@@ -7,6 +7,7 @@ import { Modal } from '../../components/Modal'
 import { db } from '../../db/db'
 import type { Invoice, InvoiceItem, InvoiceStatus } from '../../db/types'
 import { CURRENCY_SYMBOL, currencyLabel, formatMoney } from '../../lib/currency'
+import { convertAmount, convertInvoice, rateText, ratesOf } from '../../lib/fx'
 import { DEFAULT_INVOICING, formatDay, formatQuantity, timeUnit, unitOption, unitsOf, invoiceTotals, lineAmount, monthStart, parseAmount, todayIn } from '../../lib/invoice'
 import { countryOptions } from '../../lib/phone'
 import { myTimezone } from '../../lib/time'
@@ -91,6 +92,19 @@ function Editor({ stored }: { stored: Invoice }) {
   }, [draft, locked, valid])
 
   const set = (patch: Partial<Invoice>) => setDraft((d) => ({ ...d, ...patch }))
+  const fx = ratesOf(settings)
+  // Last currency switch, shown under the picker: which rate was used, or that there was none.
+  const [fxNote, setFxNote] = useState<{ from: string; to: string; converted: boolean } | null>(null)
+  /** Switch currency: prices and the discount follow the rates from Settings. */
+  const switchCurrency = (to: string, patch: Partial<Invoice> = {}) => {
+    if (to === draft.currency) return set(patch)
+    const { converted, ...next } = convertInvoice(draft, to, fx.rates)
+    const hasMoney = draft.items.some((it) => it.unitPrice) || draft.discount > 0
+    setFxNote(hasMoney ? { from: draft.currency, to, converted } : null)
+    setDraft({ ...next, ...patch })
+  }
+  /** A client's price (in the client's currency) in this invoice's currency. */
+  const inInvoiceCurrency = (amount: number, from: string | undefined) => (from ? (convertAmount(amount, from, draft.currency, fx.rates) ?? amount) : amount)
   const setItem = (itemId: string, patch: Partial<InvoiceItem>) => set({ items: draft.items.map((it) => (it.id === itemId ? { ...it, ...patch } : it)) })
   const units = unitsOf(settings)
   const totals = invoiceTotals(draft)
@@ -267,7 +281,7 @@ function Editor({ stored }: { stored: Invoice }) {
                     value={draft.clientId ?? ''}
                     onChange={(e) => {
                       const c = clients?.find((x) => x.id === e.target.value)
-                      if (c) set({ clientId: c.id, billToName: c.name, billToDetails: billToDetails(c), currency: c.currency })
+                      if (c) switchCurrency(c.currency, { clientId: c.id, billToName: c.name, billToDetails: billToDetails(c) })
                     }}
                     className={field}
                   >
@@ -343,7 +357,10 @@ function Editor({ stored }: { stored: Invoice }) {
                 <div className="flex flex-wrap gap-2">
                   <button
                     type="button"
-                    onClick={() => set({ items: [...draft.items, { ...newItem(units[0]), unitPrice: clients?.find((c) => c.id === draft.clientId)?.hourlyRate ?? 0 }] })}
+                    onClick={() => {
+                      const c = clients?.find((x) => x.id === draft.clientId)
+                      set({ items: [...draft.items, { ...newItem(units[0]), unitPrice: c ? inInvoiceCurrency(c.hourlyRate, c.currency) : 0 }] })
+                    }}
                     className="flex min-h-10 items-center gap-2 rounded-[10px] border border-dashed border-slate-300 px-3.5 text-sm font-semibold text-slate-700 hover:border-accent hover:text-accent"
                   >
                     <Icon name="plus" size={15} />
@@ -405,13 +422,23 @@ function Editor({ stored }: { stored: Invoice }) {
               <label htmlFor={ids.currency} className={label}>
                 {t('invoices.editor.currency')}
               </label>
-              <select id={ids.currency} disabled={locked} value={draft.currency} onChange={(e) => set({ currency: e.target.value })} className={field}>
+              <select id={ids.currency} disabled={locked} value={draft.currency} onChange={(e) => switchCurrency(e.target.value)} className={field}>
                 {currencies.map((c) => (
                   <option key={c} value={c}>
                     {currencyLabel(c)}
                   </option>
                 ))}
               </select>
+              {fxNote && fxNote.to === draft.currency && (
+                <p className={`m-0 rounded-lg px-2.5 py-2 text-xs ${fxNote.converted ? 'bg-blue-50 text-blue-900' : 'bg-orange-50 text-orange-900'}`} role="status" data-testid="fx-note">
+                  {fxNote.converted
+                    ? t('invoices.editor.fxConverted', { rate: rateText(fxNote.from, fxNote.to, fx.rates), date: formatDay(fx.date, lang) })
+                    : t('invoices.editor.fxMissing', { from: fxNote.from, to: fxNote.to })}{' '}
+                  <Link to="/settings" className="font-semibold text-accent">
+                    {t('invoices.editor.fxSettings')}
+                  </Link>
+                </p>
+              )}
             </div>
             <div className="flex flex-col gap-1.5">
               <label htmlFor={ids.tax} className={label}>
@@ -518,6 +545,9 @@ function Editor({ stored }: { stored: Invoice }) {
         onClose={() => setTimeOpen(false)}
         onAdd={(items, start, end) => {
           // A task already on the invoice gets its hours updated instead of a second line.
+          // Time comes at the client's rate, in the client's currency.
+          const from = clients?.find((c) => c.id === draft.clientId)?.currency
+          items = items.map((x) => ({ ...x, unitPrice: inInvoiceCurrency(x.unitPrice, from) }))
           const byTask = new Map(items.map((x) => [x.taskId, x]))
           const kept = draft.items.map((x) => (x.taskId && byTask.has(x.taskId) ? { ...x, quantity: byTask.get(x.taskId)!.quantity } : x))
           const added = items.filter((x) => !draft.items.some((y) => y.taskId === x.taskId))

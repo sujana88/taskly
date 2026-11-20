@@ -131,6 +131,8 @@ export interface InvoiceSettings {
   taxRates: TaxRate[]
   /** Unit names offered on invoice lines, e.g. ["Hour", "Pcs"]. */
   units: string[]
+  /** 1 US $ in each currency, set in Settings. Missing until the user saves the table (defaults apply). */
+  exchangeRates?: { date: string; rates: Record<string, number> }
 }
 
 export type InvoiceStatus = 'draft' | 'sent' | 'paid' | 'void'

@@ -3,8 +3,10 @@ import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
 import { Icon } from '../../components/Icon'
 import type { InvoiceSettings, TaxKind, TaxRate, User } from '../../db/types'
-import { DEFAULT_INVOICING, cleanUnits, nextInvoiceNumber, parseAmount, unitOption, unitsOf, validTaxRate } from '../../lib/invoice'
+import { DEFAULT_INVOICING, cleanUnits, formatDay, todayIn, nextInvoiceNumber, parseAmount, unitOption, unitsOf, validTaxRate } from '../../lib/invoice'
 import { countryForZone, countryOptions } from '../../lib/phone'
+import { currencySymbol } from '../../lib/currency'
+import { DEFAULT_RATES, FX_BASE, FX_CURRENCIES, cleanRates, fetchTodayRates, formatRate, ratesOf } from '../../lib/fx'
 import { GUARD_LIMITS, cleanGuard, type TimerGuard } from '../../lib/timerGuard'
 import { myTimezone } from '../../lib/time'
 import { updateProfile } from '../auth/auth'
@@ -64,7 +66,10 @@ export function SettingsPage() {
         <span className="text-sm text-muted">{t('settings.subtitle')}</span>
       </header>
       <div className="grid items-start gap-5 xl:grid-cols-[1.4fr_1fr]">
-        <TaxSection user={user} settings={settings} />
+        <div className="flex flex-col gap-5">
+          <TaxSection user={user} settings={settings} />
+          <RatesSection user={user} settings={settings} />
+        </div>
         <div className="flex flex-col gap-5">
           <UnitsSection user={user} settings={settings} />
           <TimerSection user={user} />
@@ -279,6 +284,118 @@ function InvoiceDefaults({ user, settings }: { user: User; settings: InvoiceSett
         className={`${primaryBtn} sm:w-auto sm:self-start sm:px-6`}
       >
         {t('settings.saveInvoice')}
+      </button>
+    </Section>
+  )
+}
+
+type RateForm = Record<string, string>
+const toForm = (rates: Record<string, number>): RateForm => Object.fromEntries(FX_CURRENCIES.filter((c) => c !== FX_BASE).map((c) => [c, rates[c] ? formatRate(rates[c]) : '']))
+
+/** Exchange rates: 1 US $ in each currency. Changing an invoice's currency converts its prices with these. */
+function RatesSection({ user, settings }: { user: User; settings: InvoiceSettings }) {
+  const { t, i18n } = useTranslation()
+  const lang = i18n.resolvedLanguage ?? 'en'
+  const saved = ratesOf(settings)
+  const [form, setForm] = useState<RateForm>(() => toForm(saved.rates))
+  const [date, setDate] = useState(saved.date)
+  const [done, setDone] = useState(false)
+  const [loading, setLoading] = useState(false)
+  const [failed, setFailed] = useState(false)
+  const parsed = Object.fromEntries(Object.entries(form).map(([c, v]) => [c, parseAmount(v)]))
+  const bad = Object.entries(parsed).filter(([, v]) => !(v > 0)).map(([c]) => c)
+  const changed = date !== saved.date || Object.entries(parsed).some(([c, v]) => v !== saved.rates[c])
+
+  const fill = (rates: Record<string, number>, day: string) => {
+    setForm(toForm({ ...saved.rates, ...rates }))
+    setDate(day)
+    setDone(false)
+  }
+
+  const fetchToday = async () => {
+    setLoading(true)
+    setFailed(false)
+    try {
+      const today = await fetchTodayRates()
+      fill(today.rates, today.date)
+    } catch {
+      setFailed(true)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <Section id="rates-h" title={t('settings.ratesTitle')} subtitle={t('settings.ratesBody')}>
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="rounded-full bg-slate-100 px-3 py-1 text-[13px] font-semibold text-slate-700" data-testid="rates-date">
+          {t('settings.ratesDate', { date: formatDay(date, lang) })}
+        </span>
+        <button type="button" onClick={() => void fetchToday()} disabled={loading} className="flex min-h-9 items-center gap-1.5 rounded-xl border border-line px-3 text-[13px] font-semibold hover:bg-slate-50 disabled:opacity-60">
+          <Icon name="reset" size={14} />
+          {loading ? t('settings.ratesLoading') : t('settings.ratesFetch')}
+        </button>
+        <button type="button" onClick={() => fill(DEFAULT_RATES.rates, DEFAULT_RATES.date)} className="min-h-9 rounded-xl px-2 text-[13px] font-semibold text-accent hover:underline">
+          {t('settings.ratesDefaults')}
+        </button>
+      </div>
+      {failed && (
+        <p className="m-0 text-[13px] text-red-700" role="alert">
+          {t('settings.ratesFailed')}
+        </p>
+      )}
+      <table className="w-full border-collapse text-sm" data-testid="rates-table">
+        <thead>
+          <tr className="text-left text-xs font-bold tracking-wide text-muted uppercase">
+            <th scope="col" className="pb-2 font-bold">{t('settings.ratesFrom')}</th>
+            <th scope="col" className="pb-2 font-bold">{t('settings.ratesValue')}</th>
+            <th scope="col" className="pb-2 font-bold">{t('settings.ratesTo')}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {Object.keys(form).map((c) => (
+            <tr key={c} className="border-t border-line">
+              <td className="py-1.5 pr-3 font-semibold whitespace-nowrap text-slate-700">1 {currencySymbol(FX_BASE)} =</td>
+              <td className="py-1.5 pr-3">
+                <input
+                  aria-label={t('settings.rateFor', { code: c })}
+                  value={form[c]}
+                  inputMode="decimal"
+                  onChange={(e) => {
+                    setForm({ ...form, [c]: e.target.value })
+                    // A rate typed by hand is today's rate.
+                    setDate(todayIn(myTimezone()))
+                    setDone(false)
+                  }}
+                  onBlur={() => parsed[c] > 0 && setForm({ ...form, [c]: formatRate(parsed[c]) })}
+                  aria-invalid={bad.includes(c)}
+                  className={`${input} max-w-44 text-right tabular-nums aria-[invalid=true]:border-red-400`}
+                />
+              </td>
+              <td className="py-1.5 whitespace-nowrap text-slate-700">
+                <strong className="font-semibold">{currencySymbol(c)}</strong> <span className="text-muted">{c}</span>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      {bad.length > 0 && (
+        <p className="m-0 text-[13px] text-red-700" role="alert">
+          {t('settings.ratesInvalid', { codes: bad.join(', ') })}
+        </p>
+      )}
+      <p className="m-0 text-xs text-muted">{t('settings.ratesHint')}</p>
+      <Saved show={done} text={t('settings.saved')} />
+      <button
+        type="button"
+        disabled={!changed || bad.length > 0}
+        onClick={async () => {
+          await updateProfile(user.id, { invoicing: { ...settings, exchangeRates: { date, rates: cleanRates(parsed) } } })
+          setDone(true)
+        }}
+        className={`${primaryBtn} sm:w-auto sm:self-start sm:px-6`}
+      >
+        {t('settings.ratesSave')}
       </button>
     </Section>
   )

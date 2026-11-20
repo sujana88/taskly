@@ -95,6 +95,7 @@ export interface ProfileRow {
   payment_details?: string
   tax_rates?: TaxRate[]
   invoice_units?: string[]
+  exchange_rates?: { date: string; rates: Record<string, number> } | null
   timer_guard?: { remindHours: number; idleMinutes: number; maxHours: number }
 }
 
@@ -280,6 +281,7 @@ export function profileInvoicing(r: ProfileRow): InvoiceSettings {
     paymentDetails: r.payment_details ?? '',
     taxRates: (r.tax_rates ?? []).map((x) => ({ ...x, rate: Number(x.rate) })),
     units: r.invoice_units ?? ['Hour', 'Hours', 'Service(s)', 'Project(s)'],
+    ...(r.exchange_rates ? { exchangeRates: { date: r.exchange_rates.date, rates: Object.fromEntries(Object.entries(r.exchange_rates.rates ?? {}).map(([k, v]) => [k, Number(v)])) } } : {}),
   }
 }
 
@@ -291,7 +293,7 @@ export function profileChanges(changes: Partial<Pick<User, 'name' | 'workHours' 
   const b = changes.business
   if (b) Object.assign(row, { company_name: b.companyName, company_address: b.address, company_email: b.email, company_phone: b.phone, company_tax_id: b.taxId, company_logo: b.logo ?? null })
   const s = changes.invoicing
-  if (s) Object.assign(row, { invoice_prefix: s.prefix, invoice_due_days: s.dueDays, invoice_notes: s.notes, payment_details: s.paymentDetails, tax_rates: s.taxRates, invoice_units: s.units })
+  if (s) Object.assign(row, { invoice_prefix: s.prefix, invoice_due_days: s.dueDays, invoice_notes: s.notes, payment_details: s.paymentDetails, tax_rates: s.taxRates, invoice_units: s.units, exchange_rates: s.exchangeRates ?? null })
   if (changes.timerGuard) row.timer_guard = changes.timerGuard
   return row
 }
