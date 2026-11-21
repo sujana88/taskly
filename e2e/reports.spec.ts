@@ -112,6 +112,50 @@ test('client report: a progress report document to send, like an invoice', async
   await expect(page.locator('#root')).toBeHidden()
 })
 
+test('progress update: send the report as an image on WhatsApp, like an invoice', async ({ page, context }) => {
+  await context.grantPermissions(['clipboard-read', 'clipboard-write'])
+  // Record WhatsApp links instead of opening new windows.
+  await page.addInitScript(() => {
+    ;(window as unknown as { opened: string[] }).opened = []
+    window.open = ((url: string) => {
+      ;(window as unknown as { opened: string[] }).opened.push(url)
+      return null
+    }) as typeof window.open
+    // A computer without a share sheet for files.
+    Object.defineProperty(navigator, 'canShare', { value: () => false, configurable: true })
+  })
+  // The page is already open: load it again so the script above runs.
+  await page.reload()
+  // Lena needs a WhatsApp number.
+  await page.goto('/#/clients')
+  await page.getByTestId('client-row').filter({ hasText: 'Nordlicht Studio' }).getByRole('button', { name: 'Edit Nordlicht Studio' }).click()
+  const edit = page.getByRole('dialog', { name: 'Edit Nordlicht Studio' })
+  await edit.getByLabel('Phone number').fill('151 2345 6789')
+  await edit.getByRole('button', { name: 'Save', exact: true }).click()
+  await expect(edit).toBeHidden()
+
+  await page.goto('/#/reports?tab=client')
+  const format = page.getByRole('group', { name: 'Message format' })
+  await expect(format.getByRole('button')).toHaveText(['Message with details', 'Report image'])
+  await format.getByRole('button', { name: 'Report image' }).click()
+  const caption = page.getByTestId('update-caption')
+  await expect(caption).toHaveValue(/^Hello Lena, please find attached the progress report \*PR-20261109-NS\* for 9 Nov – 15 Nov 2026\./)
+  await expect(caption).toHaveValue(/Overall progress: \*70%\*, status: \*On track\*\./)
+  await page.getByTestId('update-image').screenshot({ path: `${shots}/65-report-image-tab.png` })
+
+  const [download] = await Promise.all([page.waitForEvent('download'), page.getByRole('button', { name: 'Download image' }).click()])
+  expect(download.suggestedFilename()).toBe('PR-20261109-NS.png')
+
+  // On a computer the image goes to the clipboard and the chat opens with the caption.
+  await page.getByTestId('update-send-image').click()
+  // Making the image embeds the fonts first, which can take a few seconds.
+  await expect(page.getByText('Image copied. Paste it into the WhatsApp chat with Ctrl+V.')).toBeVisible({ timeout: 15_000 })
+  const opened = await page.evaluate(() => (window as unknown as { opened: string[] }).opened)
+  expect(opened).toHaveLength(1)
+  expect(opened[0]).toMatch(/^https:\/\/wa\.me\/4915123456789\?text=Hello%20Lena%2C%20please%20find%20attached%20the%20progress%20report/)
+  expect(await page.evaluate(async () => (await navigator.clipboard.read())[0].types)).toContain('image/png')
+})
+
 test('delivery message: hand a finished task over, then mark it delivered', async ({ page }) => {
   // From the finished task's panel.
   await page.goto('/#/tasks')

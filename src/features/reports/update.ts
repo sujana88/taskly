@@ -57,6 +57,20 @@ export function buildDeliveryMessage(args: { t: TFunction; client: Client; task:
   return lines.join('\n')
 }
 
+/** The short WhatsApp text that goes with the report image (*stars* are bold on WhatsApp). */
+export function buildReportCaption(args: { t: TFunction; client: Client; number: string; period: string; overall: number; health: string; sender?: string }): string {
+  const { t, client, sender } = args
+  const lines = [
+    t('reports.update.caption', { name: client.contactName?.trim() || t('reports.update.team', { client: client.name }), number: args.number, period: args.period }),
+    '',
+    t('reports.update.captionStatus', { pct: args.overall, health: args.health }),
+    '',
+    t('reports.update.captionQuestions'),
+  ]
+  if (sender) lines.push('', t('reports.update.thanks'), sender)
+  return lines.join('\n')
+}
+
 const esc = (s: string) => s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]!)
 
 /** A clean, printable timesheet in a new tab; the browser's "Save as PDF" makes the file. */

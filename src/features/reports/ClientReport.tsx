@@ -1,5 +1,5 @@
 import { toBlob } from 'html-to-image'
-import { useEffect, useId, useMemo, useRef, useState, type ReactNode } from 'react'
+import { useEffect, useId, useMemo, useRef, useState, type ComponentProps, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
 import { Icon } from '../../components/Icon'
@@ -15,7 +15,7 @@ import { WhatsAppIcon } from '../invoices/WhatsAppPanel'
 import { deliverTask } from '../tasks/actions'
 import { useTaskData } from '../tasks/useTaskData'
 import { DocPrintPortal, ProgressDocument } from './ProgressDocument'
-import { buildDeliveryMessage, buildProgressUpdate } from './update'
+import { buildDeliveryMessage, buildProgressUpdate, buildReportCaption } from './update'
 
 const btn = 'flex min-h-11 items-center justify-center gap-2 rounded-xl px-4 text-sm font-bold'
 const outline = `${btn} border border-line bg-white text-ink no-underline hover:bg-slate-50 disabled:opacity-50`
@@ -39,6 +39,25 @@ function useFlag(): [boolean, () => void] {
     return () => clearTimeout(id)
   }, [on])
   return [on, () => setOn(true)]
+}
+
+/** A PNG of a document node (2× for sharp text). Web fonts can fail to embed: then the system font is used. */
+async function docImage(node: HTMLElement): Promise<Blob | null> {
+  const opts = { pixelRatio: 2, backgroundColor: '#ffffff', cacheBust: true }
+  return toBlob(node, opts)
+    .catch(() => toBlob(node, { ...opts, skipFonts: true }))
+    .catch(() => null)
+}
+
+function downloadBlob(blob: Blob, name: string) {
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = name
+  document.body.append(a)
+  a.click()
+  a.remove()
+  setTimeout(() => URL.revokeObjectURL(url), 1000)
 }
 
 async function copyText(text: string): Promise<boolean> {
@@ -89,21 +108,13 @@ export function ClientReport({ report, now, clientId, onClient, deliverId }: { r
     const node = docRef.current?.firstElementChild as HTMLElement | null
     if (!node) return
     setImageState('working')
-    const opts = { pixelRatio: 2, backgroundColor: '#ffffff', cacheBust: true }
-    const blob = await toBlob(node, opts).catch(() => toBlob(node, { ...opts, skipFonts: true })).catch(() => null)
+    const blob = await docImage(node)
     if (!blob) return setImageState('failed')
     try {
       await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })])
       return setImageState('copied')
     } catch {
-      const url = URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      a.href = url
-      a.download = `${number}.png`
-      document.body.append(a)
-      a.click()
-      a.remove()
-      setTimeout(() => URL.revokeObjectURL(url), 1000)
+      downloadBlob(blob, `${number}.png`)
       setImageState('downloaded')
     }
   }
@@ -161,7 +172,7 @@ export function ClientReport({ report, now, clientId, onClient, deliverId }: { r
             <p className="m-0 text-[13px] text-muted">{t('reports.client.notesHint')}</p>
             <textarea id={notesId} value={notes} onChange={(e) => setNotes(e.target.value)} rows={3} maxLength={1200} className="w-full resize-y rounded-xl border border-line bg-white px-3.5 py-2.5 text-[14px] outline-none focus:border-accent" />
           </section>
-          <ProgressUpdate report={report} client={client} now={now} lang={lang} />
+          <ProgressUpdate report={report} client={client} now={now} lang={lang} doc={docProps} />
           <DeliveryMessage client={client} initialTaskId={deliverId} />
         </div>
       </div>
@@ -216,9 +227,21 @@ function SendButtons({ client, text, subject, textId, extra }: { client: Client;
   )
 }
 
-/** The short message that goes with the report, with the best moment to send it. */
-function ProgressUpdate({ report, client, now, lang }: { report: WeekReport; client: Client; now: number; lang: string }) {
+type UpdateMode = 'text' | 'image'
+
+/**
+ * The message that goes with the report, with the best moment to send it: a message with the details,
+ * or (like an invoice) the report as an image with a short caption, for WhatsApp.
+ */
+function ProgressUpdate({ report, client, now, lang, doc }: { report: WeekReport; client: Client; now: number; lang: string; doc: ComponentProps<typeof ProgressDocument> }) {
   const { t } = useTranslation()
+  const [mode, setMode] = useState<UpdateMode>('text')
+  const captionId = useId()
+  const fullRef = useRef<HTMLDivElement>(null)
+  const [sendState, setSendState] = useState<'idle' | 'preparing' | 'copied' | 'downloaded' | 'shared' | 'failed'>('idle')
+  const [captionCopied, setCaptionCopied] = useFlag()
+  const to = waFor(client)
+  const period = `${formatInZone(report.week.start, doc.periodTz, lang, 'd MMM')} – ${formatInZone(report.week.end - 1, doc.periodTz, lang, 'd MMM yyyy')}`
   const data = useTaskData()
   const me = useMyHours()
   const user = useCurrentUser()
@@ -231,6 +254,54 @@ function ProgressUpdate({ report, client, now, lang }: { report: WeekReport; cli
   const city = cityOf(client.timezone)
   const theirNow = formatInZone(now, client.timezone, lang, 'HH:mm')
   const subject = t('reports.update.subject', { client: client.name, week: formatInZone(report.week.start, me.timezone, lang, 'd MMM') })
+  const captionGenerated = buildReportCaption({ t, client, number: doc.number, period, overall: doc.report.overall, health: t(`progressDoc.health.${doc.report.health}`), sender: user?.name })
+  const [caption, setCaption] = useEditable(`${client.id}|${report.week.start}|${lang}`, captionGenerated)
+  const fileName = `${doc.number}.png`
+
+  const makeImage = async () => {
+    const node = fullRef.current?.firstElementChild as HTMLElement | null
+    return node ? docImage(node) : null
+  }
+
+  // Like the invoice: phones share the image with the text; computers copy the image and open the chat.
+  const sendImage = async () => {
+    if (!to) return
+    setSendState('preparing')
+    const blob = await makeImage()
+    if (!blob) return setSendState('failed')
+    const file = new File([blob], fileName, { type: 'image/png' })
+    if (navigator.canShare?.({ files: [file] })) {
+      try {
+        await navigator.share({ files: [file], text: caption })
+        return setSendState('shared')
+      } catch (e) {
+        if ((e as Error).name === 'AbortError') return setSendState('idle')
+      }
+    }
+    let copied = false
+    try {
+      await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })])
+      copied = true
+    } catch {
+      downloadBlob(blob, fileName)
+    }
+    setSendState(copied ? 'copied' : 'downloaded')
+    window.open(waLink(to, caption), '_blank', 'noopener')
+  }
+
+  const tab = (m: UpdateMode, label: string) => (
+    <button
+      type="button"
+      aria-pressed={mode === m}
+      onClick={() => {
+        setMode(m)
+        setSendState('idle')
+      }}
+      className={`min-h-9 flex-1 rounded-[9px] px-3 text-[13px] font-semibold ${mode === m ? 'bg-white text-ink shadow-sm' : 'text-slate-600 hover:text-ink'}`}
+    >
+      {label}
+    </button>
+  )
 
   return (
     <section className="card flex flex-col gap-4 p-6" aria-labelledby="update-h">
@@ -238,17 +309,66 @@ function ProgressUpdate({ report, client, now, lang }: { report: WeekReport; cli
         <Icon name="sparkle" size={16} className="text-accent" />
         {t('reports.update.title')}
       </h2>
-      <label htmlFor={textId} className="sr-only">
-        {t('reports.update.text')}
-      </label>
-      <textarea
-        id={textId}
-        value={text}
-        onChange={(e) => setText(e.target.value)}
-        rows={10}
-        data-testid="update-text"
-        className="w-full resize-y rounded-2xl border border-line bg-slate-50 px-4 py-3.5 text-[14px] leading-relaxed outline-none focus:border-accent focus:bg-white"
-      />
+      <div role="group" aria-label={t('reports.update.format')} className="flex gap-1 rounded-xl bg-slate-100 p-1">
+        {tab('text', t('reports.update.modeText'))}
+        {tab('image', t('reports.update.modeImage'))}
+      </div>
+      {mode === 'text' ? (
+        <>
+          <label htmlFor={textId} className="sr-only">
+            {t('reports.update.text')}
+          </label>
+          <textarea
+            id={textId}
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            rows={10}
+            data-testid="update-text"
+            className="w-full resize-y rounded-2xl border border-line bg-slate-50 px-4 py-3.5 text-[14px] leading-relaxed outline-none focus:border-accent focus:bg-white"
+          />
+        </>
+      ) : (
+        <div className="grid gap-4 sm:grid-cols-[150px_minmax(0,1fr)]" data-testid="update-image">
+          <div className="flex flex-col gap-2">
+            <div className="h-[212px] w-[150px] overflow-hidden rounded-lg border border-line bg-white shadow-sm" aria-hidden="true">
+              <div className="w-[210mm] origin-top-left scale-[0.189]">
+                <ProgressDocument {...doc} />
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={async () => {
+                setSendState('preparing')
+                const blob = await makeImage()
+                if (!blob) return setSendState('failed')
+                downloadBlob(blob, fileName)
+                setSendState('idle')
+              }}
+              className="flex min-h-9 w-[150px] items-center justify-center gap-1.5 rounded-lg border border-line text-[13px] font-semibold hover:bg-slate-50"
+            >
+              <Icon name="download" size={14} />
+              {t('invoices.wa.download')}
+            </button>
+          </div>
+          <div className="flex min-w-0 flex-col gap-1.5">
+            <label htmlFor={captionId} className="text-[13px] font-semibold text-slate-700">
+              {t('invoices.wa.message')}
+            </label>
+            <div className="rounded-2xl bg-[#efeae2] p-2.5">
+              <textarea
+                id={captionId}
+                value={caption}
+                onChange={(e) => setCaption(e.target.value)}
+                rows={8}
+                maxLength={2000}
+                data-testid="update-caption"
+                className="w-full resize-y rounded-xl rounded-tr-sm border border-transparent bg-[#d9fdd3] px-3 py-2.5 text-[14px] leading-relaxed text-slate-900 shadow-sm outline-none focus:border-green-600"
+              />
+            </div>
+            <span className="text-xs text-muted">{t('invoices.wa.messageHint')}</span>
+          </div>
+        </div>
+      )}
       <p className={`m-0 flex items-start gap-2 rounded-xl px-3.5 py-2.5 text-[13px] ${status === 'working' ? 'bg-green-50 text-green-800' : 'bg-amber-50 text-amber-900'}`} data-testid="send-hint">
         <Icon name="clock" size={15} className="mt-0.5 shrink-0" />
         <span>
@@ -266,7 +386,54 @@ function ProgressUpdate({ report, client, now, lang }: { report: WeekReport; cli
           )}
         </span>
       </p>
-      <SendButtons client={client} text={text} subject={subject} textId={textId} />
+      {mode === 'text' ? (
+        <SendButtons client={client} text={text} subject={subject} textId={textId} />
+      ) : (
+        <div className="flex flex-col gap-2">
+          <p className="m-0 rounded-xl bg-slate-50 px-3 py-2 text-[13px] text-slate-600">{t('invoices.wa.imageHint')}</p>
+          <div className="grid grid-cols-[auto_minmax(0,1fr)] gap-2">
+            <button
+              type="button"
+              onClick={async () => {
+                if (await copyText(caption)) setCaptionCopied()
+              }}
+              className={outline}
+            >
+              <Icon name={captionCopied ? 'check' : 'copy'} size={16} />
+              {captionCopied ? t('reports.update.copied') : t('reports.update.copy')}
+            </button>
+            <button
+              type="button"
+              disabled={!to || sendState === 'preparing' || !caption.trim()}
+              onClick={() => void sendImage()}
+              className={`${btn} bg-[#25D366] text-white hover:bg-[#1ebe5b] disabled:cursor-not-allowed disabled:opacity-50`}
+              data-testid="update-send-image"
+            >
+              <WhatsAppIcon size={18} />
+              {sendState === 'preparing' ? t('invoices.wa.preparing') : t('invoices.wa.sendImage')}
+            </button>
+          </div>
+          {(sendState === 'copied' || sendState === 'downloaded' || sendState === 'failed') && (
+            <p role="status" className={`m-0 text-sm font-medium ${sendState === 'failed' ? 'text-red-700' : 'text-green-800'}`}>
+              {t(`invoices.wa.${sendState === 'copied' ? 'imageCopied' : sendState === 'downloaded' ? 'imageDownloaded' : 'imageFailed'}`)}
+            </p>
+          )}
+          {!to && (
+            <p className="m-0 text-xs text-muted">
+              {t(client.contactPhone?.trim() ? 'invoices.wa.badClientPhone' : 'invoices.wa.needClientPhone', { client: client.name })}{' '}
+              <Link to="/clients" className="font-semibold text-accent">
+                {t('invoices.wa.editClient')}
+              </Link>
+            </p>
+          )}
+          {/* Off-screen, full-size copy of the report: the source of the image. */}
+          <div className="pointer-events-none fixed top-0 -left-[10000px]" aria-hidden="true">
+            <div ref={fullRef} className="w-[210mm] bg-white">
+              <ProgressDocument {...doc} />
+            </div>
+          </div>
+        </div>
+      )}
     </section>
   )
 }
