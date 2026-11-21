@@ -56,6 +56,9 @@ test('exports the timesheet as CSV and opens a printable PDF', async ({ page }) 
 
 test('drafts a progress update with the best time to send', async ({ page, context }) => {
   await context.grantPermissions(['clipboard-read', 'clipboard-write'])
+  // The message for the client lives on the Client report tab, not on your own report.
+  await expect(page.getByTestId('update-text')).toHaveCount(0)
+  await page.getByRole('tab', { name: 'Client report' }).click()
   const text = page.getByTestId('update-text')
   await expect(text).toHaveValue(/^Hi Lena, here is this week's update\./)
   await expect(text).toHaveValue(/In progress: Hero section redesign, 3 of 5 steps done\./)
@@ -72,5 +75,75 @@ test('drafts a progress update with the best time to send', async ({ page, conte
   await expect(text).toHaveValue(/^Hi Jordan,/)
   await expect(text).toHaveValue(/Done: Design system audit is ready for your review\./)
   await expect(page.getByTestId('send-hint')).toContainText("Better later: it's 04:02 in New York. Send Thu 21:00 your time (09:00 there).")
-  await expect(page.getByRole('link', { name: 'Open in email' })).toHaveAttribute('href', /^mailto:jordan%40pinewood\.example\?subject=Pinewood%20Labs/)
+  await expect(page.getByRole('link', { name: 'Email', exact: true }).first()).toHaveAttribute('href', /^mailto:jordan%40pinewood\.example\?subject=Pinewood%20Labs/)
+})
+
+test('client report: a progress report document to send, like an invoice', async ({ page }) => {
+  await page.getByRole('tab', { name: 'Client report' }).click()
+  await expect(page).toHaveURL(/tab=client/)
+  const doc = page.locator('#root [data-testid="progress-doc"]')
+  await expect(doc.getByRole('heading', { name: 'PROGRESS REPORT' })).toBeVisible()
+  await expect(doc.getByTestId('progress-number')).toHaveText('PR-20261109-NS')
+  await expect(doc.getByTestId('progress-client')).toHaveText('Nordlicht Studio')
+  await expect(doc.getByTestId('progress-period')).toHaveText('9 Nov 2026 – 15 Nov 2026')
+  await expect(doc.getByTestId('progress-health')).toHaveText('On track')
+  await expect(doc.getByTestId('progress-row')).toHaveCount(2)
+  await expect(doc.getByTestId('progress-row').nth(0)).toContainText('Pricing page v2')
+  await expect(doc.getByTestId('progress-pct')).toHaveText(['80%', '60%'])
+  await expect(doc.getByRole('img', { name: 'complete' })).toContainText('70%')
+  await expect(doc.getByTestId('progress-next')).toContainText('High-fidelity desktop version (Hero section redesign)')
+  // Rates and money never appear on the client's report.
+  await expect(doc).not.toContainText('€')
+
+  await page.getByLabel('Notes for the client').fill('Waiting for the final copy for the pricing FAQ.')
+  await expect(doc).toContainText('Waiting for the final copy for the pricing FAQ.')
+  await doc.screenshot({ path: `${shots}/62-progress-report.png` })
+  await page.screenshot({ path: `${shots}/63-client-report.png`, fullPage: true })
+
+  // Another client: its own number, the finished task listed as completed.
+  await page.getByLabel('Client', { exact: true }).selectOption({ label: 'Pinewood Labs' })
+  await expect(doc.getByTestId('progress-number')).toHaveText('PR-20261109-PL')
+  await expect(doc.getByTestId('progress-completed')).toContainText('Design system audit')
+  await expect(page.getByLabel('Notes for the client')).toHaveValue('')
+
+  // Printing shows only the report.
+  await page.emulateMedia({ media: 'print' })
+  await expect(page.locator('.print-root [data-testid="progress-doc"]')).toBeVisible()
+  await expect(page.locator('#root')).toBeHidden()
+})
+
+test('delivery message: hand a finished task over, then mark it delivered', async ({ page }) => {
+  // From the finished task's panel.
+  await page.goto('/#/tasks')
+  await page.getByTestId('task-card').filter({ hasText: 'Design system audit' }).click()
+  await page.getByTestId('drawer-delivery-message').click()
+  await expect(page).toHaveURL(/tab=client&client=c-pine&deliver=t-audit/)
+
+  const card = page.getByTestId('delivery-card')
+  await expect(card.getByLabel('Finished task')).toHaveValue('t-audit')
+  const text = card.getByTestId('delivery-text')
+  await expect(text).toHaveValue(/^Hi Jordan,\n\nGood news: Design system audit is finished and ready for you\./)
+  await expect(text).toHaveValue(/What is included:\n- Inventory\n- Colour tokens\n- Type scale\n- Report/)
+  await expect(text).toHaveValue(/I have attached the final files/)
+  await card.getByLabel('Link to the files (optional)').fill('https://drive.example/audit')
+  await expect(text).toHaveValue(/You can find everything here: https:\/\/drive\.example\/audit/)
+  await expect(card.getByRole('link', { name: 'Email' })).toHaveAttribute('href', /subject=Delivered%3A%20Design%20system%20audit/)
+  await card.screenshot({ path: `${shots}/64-delivery-message.png` })
+
+  await card.getByRole('button', { name: 'Mark as delivered' }).click()
+  await expect(card.getByRole('status')).toHaveText('Design system audit is marked as delivered.')
+  await expect(card.getByTestId('delivery-empty')).toBeVisible()
+  await page.goto('/#/tasks')
+  await page.getByRole('group', { name: 'View' }).getByRole('button', { name: /^Delivered/ }).click()
+  await expect(page.getByTestId('delivered-row').filter({ hasText: 'Design system audit' })).toHaveCount(1)
+})
+
+test('client report in Indonesian', async ({ page }) => {
+  await page.getByRole('button', { name: 'ID', exact: true }).click()
+  await page.getByRole('tab', { name: 'Laporan klien' }).click()
+  const doc = page.locator('#root [data-testid="progress-doc"]')
+  await expect(doc.getByRole('heading', { name: 'LAPORAN PROGRES' })).toBeVisible()
+  await expect(doc.getByTestId('progress-health')).toHaveText('Sesuai jadwal')
+  await page.getByLabel('Klien', { exact: true }).selectOption({ label: 'Pinewood Labs' })
+  await expect(page.getByTestId('delivery-text')).toHaveValue(/^Halo Jordan,\n\nKabar baik: Design system audit sudah selesai/)
 })

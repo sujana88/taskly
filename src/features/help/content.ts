@@ -91,7 +91,9 @@ const en: HelpContent = {
         'Tiles show tracked time (compared with last week), the daily average, tasks completed and focus sessions.',
         'The bar chart shows hours per day; the busiest day is dark blue. The client bars show each client\'s share.',
         'Timesheet: hours × rate per client, in their own currency. Export all entries as CSV or one client as PDF.',
-        'Progress update drafts a message from the week\'s work. Edit it, then Copy text or Open in email.',
+        'My report is for you: tiles, charts and timesheets. Client report is what you send to a client.',
+        'Client report: a progress report page like an invoice (status, % complete, every task, done and next). Print or save it as PDF, or copy it as an image for WhatsApp.',
+        'Progress update drafts the message that goes with it; Delivery message hands a finished task over, then marks it delivered. Copy, email or send them on WhatsApp.',
       ],
     },
     invoices: {
@@ -234,7 +236,9 @@ const id: HelpContent = {
         'Kartu menampilkan waktu tercatat (dibanding minggu lalu), rata-rata harian, tugas selesai, dan sesi fokus.',
         'Grafik batang menampilkan jam per hari; hari tersibuk berwarna biru tua. Batang klien menunjukkan porsi tiap klien.',
         'Timesheet: jam × tarif per klien, dalam mata uang masing-masing. Ekspor semua catatan ke CSV atau satu klien ke PDF.',
-        'Progress update menyusun pesan dari pekerjaan minggu ini. Edit, lalu Salin teks atau Buka di email.',
+        'Laporan saya untuk Anda sendiri: kartu, grafik dan timesheet. Laporan klien adalah yang Anda kirim ke klien.',
+        'Laporan klien: halaman laporan progres seperti tagihan (status, % selesai, semua tugas, yang selesai dan berikutnya). Cetak atau simpan sebagai PDF, atau salin sebagai gambar untuk WhatsApp.',
+        'Progress update menyusun pesan pengantarnya; Pesan serah terima menyerahkan tugas yang selesai lalu menandainya terkirim. Salin, kirim lewat email atau WhatsApp.',
       ],
     },
     invoices: {

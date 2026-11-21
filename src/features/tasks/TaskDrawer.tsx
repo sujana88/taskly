@@ -1,5 +1,6 @@
 import { useEffect, useId, useRef, useState, type FormEvent } from 'react'
 import { useTranslation } from 'react-i18next'
+import { Link } from 'react-router-dom'
 import { Icon } from '../../components/Icon'
 import { PRIORITIES, STATUSES, type Status, type Task } from '../../db/types'
 import { cityOf, formatInZone, fromDateTimeLocal, myTimezone, sameWallClock, toDateTimeLocal } from '../../lib/time'
@@ -301,6 +302,18 @@ function DrawerBody({ task, data, onClose, autoFocusTitle }: { task: Task; data:
             className="w-full resize-y rounded-[10px] border border-line px-3 py-2.5 text-[15px] leading-relaxed outline-none focus:border-accent"
           />
         </div>
+
+        {task.status === 'done' && !task.deliveredAt && !task.cancelledAt && data.clientFor(task) && (
+          <Link
+            to={{ pathname: '/reports', search: `?tab=client&client=${data.clientFor(task)!.id}&deliver=${task.id}` }}
+            className="flex min-h-12 items-center gap-3 rounded-xl border border-green-200 bg-green-50 px-4 text-sm font-semibold text-green-800 no-underline hover:bg-green-100"
+            data-testid="drawer-delivery-message"
+          >
+            <Icon name="send" size={16} />
+            <span className="flex-1">{t('delivered.message')}</span>
+            <Icon name="chevronRight" size={14} />
+          </Link>
+        )}
 
         <TaskTimeSection task={task} data={data} />
       </div>

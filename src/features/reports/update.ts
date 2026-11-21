@@ -37,6 +37,26 @@ export function buildProgressUpdate(args: { t: TFunction; lang: string; tz: stri
   return lines.join('\n')
 }
 
+/**
+ * The message that hands finished work over to the client: what is done, what it includes
+ * (its steps), where to find it, and an invitation to ask for changes.
+ */
+export function buildDeliveryMessage(args: { t: TFunction; client: Client; task: Task; link?: string; sender?: string }): string {
+  const { t, client, task, sender } = args
+  const link = args.link?.trim()
+  const lines: string[] = [t('reports.delivery.hi', { name: client.contactName?.trim() || t('reports.update.team', { client: client.name }) }), '', t('reports.delivery.done', { title: task.title })]
+  const steps = task.subtasks.filter((s) => s.done)
+  if (steps.length) {
+    lines.push('', t('reports.delivery.includes'))
+    for (const s of steps) lines.push(`- ${s.title}`)
+  }
+  lines.push('', link ? t('reports.delivery.link', { link }) : t('reports.delivery.attached'))
+  lines.push('', t('reports.delivery.review'))
+  lines.push('', t('reports.delivery.thanks'))
+  if (sender) lines.push('', t('reports.update.thanks'), sender)
+  return lines.join('\n')
+}
+
 const esc = (s: string) => s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]!)
 
 /** A clean, printable timesheet in a new tab; the browser's "Save as PDF" makes the file. */
